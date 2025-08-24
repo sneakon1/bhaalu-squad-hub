@@ -1,7 +1,8 @@
 import { useState, useEffect } from 'react';
-import { Calendar, MapPin, Users, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Calendar, MapPin, Users, Clock, CheckCircle, XCircle, Radio } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import LiveGameView from './LiveGameView';
 import heroImage from '@/assets/football-hero.jpg';
 import footballSunset from '@/assets/football-sunset.jpg';
 import footballAction from '@/assets/football-action.jpg';
@@ -19,9 +20,22 @@ interface Game {
   userStatus: 'in' | 'out' | null;
 }
 
+interface LiveGame {
+  id: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeScore: number;
+  awayScore: number;
+  matchTime: string;
+  status: 'live' | 'halftime' | 'fulltime';
+  venue: string;
+}
+
 const Dashboard = () => {
   const heroImages = [heroImage, footballSunset, footballAction, footballStadium, footballTraining];
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [selectedLiveGame, setSelectedLiveGame] = useState<LiveGame | null>(null);
+  const [isLiveGameOpen, setIsLiveGameOpen] = useState(false);
   
   useEffect(() => {
     const interval = setInterval(() => {
@@ -30,6 +44,29 @@ const Dashboard = () => {
     
     return () => clearInterval(interval);
   }, [heroImages.length]);
+
+  const [liveGames] = useState<LiveGame[]>([
+    {
+      id: 'live1',
+      homeTeam: 'Bhaalu Squad',
+      awayTeam: 'Thunder FC',
+      homeScore: 2,
+      awayScore: 1,
+      matchTime: '67\'',
+      status: 'live',
+      venue: 'Central Stadium'
+    },
+    {
+      id: 'live2',
+      homeTeam: 'Eagles United',
+      awayTeam: 'Lightning FC',
+      homeScore: 0,
+      awayScore: 0,
+      matchTime: 'HT',
+      status: 'halftime',
+      venue: 'Sports Arena'
+    }
+  ]);
 
   const [games, setGames] = useState<Game[]>([
     {
@@ -100,6 +137,11 @@ const Dashboard = () => {
     });
   };
 
+  const handleLiveGameClick = (game: LiveGame) => {
+    setSelectedLiveGame(game);
+    setIsLiveGameOpen(true);
+  };
+
   return (
     <div className="space-y-8">
       {/* Hero Section */}
@@ -147,6 +189,85 @@ const Dashboard = () => {
           </div>
         </div>
       </div>
+
+      {/* Live Games Section */}
+      {liveGames.length > 0 && (
+        <div>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-poppins font-bold text-foreground flex items-center space-x-2">
+              <Radio className="w-6 h-6 text-red-500" />
+              <span>Live Games</span>
+            </h2>
+            <div className="text-sm text-muted-foreground">
+              {liveGames.length} live matches
+            </div>
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
+            {liveGames.map((game) => (
+              <Card 
+                key={game.id} 
+                className="card-field animate-slide-up p-6 cursor-pointer hover:scale-105 transition-transform duration-200" 
+                onClick={() => handleLiveGameClick(game)}
+              >
+                <div className="space-y-4">
+                  {/* Live Indicator */}
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                      <span className="text-red-500 font-semibold text-sm">LIVE</span>
+                    </div>
+                    <div className="text-sm text-muted-foreground">{game.matchTime}</div>
+                  </div>
+
+                  {/* Teams and Score */}
+                  <div className="text-center">
+                    <div className="flex items-center justify-center space-x-4 mb-2">
+                      <div className="text-right flex-1">
+                        <div className="font-semibold text-foreground">{game.homeTeam}</div>
+                        <div className="text-xs text-muted-foreground">Home</div>
+                      </div>
+                      
+                      <div className="text-2xl font-bold text-primary px-4">
+                        {game.homeScore} - {game.awayScore}
+                      </div>
+                      
+                      <div className="text-left flex-1">
+                        <div className="font-semibold text-foreground">{game.awayTeam}</div>
+                        <div className="text-xs text-muted-foreground">Away</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Match Info */}
+                  <div className="text-center">
+                    <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
+                      <MapPin className="w-4 h-4" />
+                      <span>{game.venue}</span>
+                    </div>
+                    <div className="mt-2">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        game.status === 'live' 
+                          ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
+                          : game.status === 'halftime'
+                          ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                          : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300'
+                      }`}>
+                        {game.status.toUpperCase()}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Click to Watch */}
+                  <div className="text-center text-sm text-primary font-medium">
+                    Click to watch live →
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Upcoming Games Section */}
       <div>
@@ -263,6 +384,13 @@ const Dashboard = () => {
           <div className="text-sm text-muted-foreground">Team Rating</div>
         </Card>
       </div>
+
+      {/* Live Game Modal */}
+      <LiveGameView
+        game={selectedLiveGame}
+        isOpen={isLiveGameOpen}
+        onClose={() => setIsLiveGameOpen(false)}
+      />
     </div>
   );
 };
