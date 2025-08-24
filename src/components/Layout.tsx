@@ -15,6 +15,7 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
     { id: 'dashboard', name: 'Dashboard', icon: Trophy },
     { id: 'players', name: 'Players', icon: Users },
     { id: 'captain', name: 'Captain', icon: Settings },
+    { id: 'admin', name: 'Admin', icon: Settings },
     { id: 'profile', name: 'Profile', icon: User },
   ];
 

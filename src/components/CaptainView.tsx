@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Shuffle, Phone, Users, Crown, ArrowRight, RotateCcw } from 'lucide-react';
+import { Shuffle, Phone, Users, Crown, ArrowRight, RotateCcw, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import TeamSelectionView from './TeamSelectionView';
 
 interface Player {
   id: string;
@@ -20,6 +21,7 @@ interface Team {
 }
 
 const CaptainView = () => {
+  const [view, setView] = useState<'tools' | 'team-selection'>('tools');
   const [availablePlayers] = useState<Player[]>([
     { id: '1', name: 'Arjun Sharma', position: 'Striker', rating: 4.3, isAvailable: true },
     { id: '2', name: 'Vikram Singh', position: 'Midfielder', rating: 4.1, isAvailable: true },
@@ -40,6 +42,10 @@ const CaptainView = () => {
 
   const [callingPlayer, setCallingPlayer] = useState<Player | null>(null);
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
+
+  if (view === 'team-selection') {
+    return <TeamSelectionView />;
+  }
 
   const handleRandomTeamGeneration = () => {
     const shuffledPlayers = [...availablePlayers].sort(() => Math.random() - 0.5);
@@ -103,7 +109,7 @@ const CaptainView = () => {
       </div>
 
       {/* Captain Actions */}
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-6 md:grid-cols-3">
         {/* Player Calling */}
         <Card className="card-field p-6">
           <div className="space-y-4">
@@ -163,6 +169,39 @@ const CaptainView = () => {
               >
                 <RotateCcw className="w-4 h-4 mr-2" />
                 Reset Call List
+              </Button>
+            </div>
+          </div>
+        </Card>
+
+        {/* Team Selection */}
+        <Card className="card-field p-6">
+          <div className="space-y-4">
+            <div className="flex items-center space-x-3">
+              <UserCheck className="w-6 h-6 text-primary" />
+              <h2 className="text-xl font-poppins font-semibold">Team Selection</h2>
+            </div>
+            
+            <p className="text-muted-foreground text-sm">
+              Toss between captains and pick teams alternately
+            </p>
+
+            <div className="space-y-3">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-foreground mb-1">
+                  {availablePlayers.length}
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Available Players
+                </div>
+              </div>
+
+              <Button 
+                onClick={() => setView('team-selection')}
+                className="btn-action w-full"
+              >
+                <UserCheck className="w-4 h-4 mr-2" />
+                Start Team Selection
               </Button>
             </div>
           </div>

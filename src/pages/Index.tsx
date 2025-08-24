@@ -3,6 +3,7 @@ import Layout from '@/components/Layout';
 import Dashboard from '@/components/Dashboard';
 import PlayersView from '@/components/PlayersView';
 import CaptainView from '@/components/CaptainView';
+import AdminView from '@/components/AdminView';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -15,6 +16,8 @@ const Index = () => {
         return <PlayersView />;
       case 'captain':
         return <CaptainView />;
+      case 'admin':
+        return <AdminView />;
       case 'profile':
         return (
           <div className="text-center py-12">
