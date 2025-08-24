@@ -1,7 +1,7 @@
 import { useState } from 'react';
-import { Trophy, Users, User, Shield, Menu, X, Settings, ShoppingBag } from 'lucide-react';
+import { Trophy, Users, User, Shield, Menu, X, Settings, ShoppingBag, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import FootballThemeToggle from './FootballThemeToggle';
+import SimpleThemeToggle from './SimpleThemeToggle';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -59,9 +59,20 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
                 );
               })}
               
+              {/* Login/Signup Button */}
+              <Button
+                onClick={() => onTabChange('auth')}
+                variant="outline"
+                size="sm"
+                className="ml-4"
+              >
+                <LogIn className="w-4 h-4 mr-2" />
+                Login
+              </Button>
+              
               {/* Theme Toggle */}
               <div className="ml-4 pl-4 border-l border-border">
-                <FootballThemeToggle />
+                <SimpleThemeToggle />
               </div>
             </nav>
 
@@ -100,11 +111,25 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
                 );
               })}
               
+              {/* Mobile Login/Signup Button */}
+              <Button
+                onClick={() => {
+                  onTabChange('auth');
+                  setMobileMenuOpen(false);
+                }}
+                variant="outline"
+                size="sm"
+                className="w-full mt-2"
+              >
+                <LogIn className="w-4 h-4 mr-2" />
+                Login
+              </Button>
+              
               {/* Mobile Theme Toggle */}
               <div className="pt-2 mt-2 border-t border-border">
                 <div className="flex items-center justify-between px-3 py-2">
                   <span className="font-medium text-muted-foreground">Theme</span>
-                  <FootballThemeToggle />
+                  <SimpleThemeToggle />
                 </div>
               </div>
             </div>

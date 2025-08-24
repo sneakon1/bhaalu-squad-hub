@@ -6,6 +6,7 @@ import ShopView from '@/components/ShopView';
 import CaptainView from '@/components/CaptainView';
 import AdminView from '@/components/AdminView';
 import ProfileView from '@/components/ProfileView';
+import AuthView from '@/components/AuthView';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -24,10 +25,17 @@ const Index = () => {
         return <AdminView />;
       case 'profile':
         return <ProfileView />;
+      case 'auth':
+        return <AuthView onBack={() => setActiveTab('dashboard')} />;
       default:
         return <Dashboard />;
     }
   };
+
+  // Don't render Layout for auth view
+  if (activeTab === 'auth') {
+    return renderActiveView();
+  }
 
   return (
     <Layout activeTab={activeTab} onTabChange={setActiveTab}>

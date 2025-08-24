@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
-import { Calendar, MapPin, Users, Clock, CheckCircle, XCircle, Radio } from 'lucide-react';
+import { Calendar, MapPin, Users, Clock, CheckCircle, XCircle, Radio, Trophy, Target } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import LiveGameView from './LiveGameView';
+import PastMatchView from './PastMatchView';
 import heroImage from '@/assets/football-hero.jpg';
 import footballSunset from '@/assets/football-sunset.jpg';
 import footballAction from '@/assets/football-action.jpg';
@@ -18,6 +19,17 @@ interface Game {
   playersIn: number;
   maxPlayers: number;
   userStatus: 'in' | 'out' | null;
+}
+
+interface PastMatch {
+  id: string;
+  homeTeam: string;
+  awayTeam: string;
+  homeScore: number;
+  awayScore: number;
+  date: string;
+  venue: string;
+  result: 'win' | 'loss' | 'draw';
 }
 
 interface LiveGame {
@@ -36,6 +48,8 @@ const Dashboard = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [selectedLiveGame, setSelectedLiveGame] = useState<LiveGame | null>(null);
   const [isLiveGameOpen, setIsLiveGameOpen] = useState(false);
+  const [selectedPastMatch, setSelectedPastMatch] = useState<PastMatch | null>(null);
+  const [isPastMatchOpen, setIsPastMatchOpen] = useState(false);
   
   useEffect(() => {
     const interval = setInterval(() => {
@@ -44,6 +58,39 @@ const Dashboard = () => {
     
     return () => clearInterval(interval);
   }, [heroImages.length]);
+
+  const [pastMatches] = useState<PastMatch[]>([
+    {
+      id: 'past1',
+      homeTeam: 'Bhaalu Squad',
+      awayTeam: 'Thunder FC',
+      homeScore: 3,
+      awayScore: 1,
+      date: '2024-08-15',
+      venue: 'Central Stadium',
+      result: 'win'
+    },
+    {
+      id: 'past2',
+      homeTeam: 'Eagles United',
+      awayTeam: 'Bhaalu Squad',
+      homeScore: 2,
+      awayScore: 2,
+      date: '2024-08-08',
+      venue: 'Sports Arena',
+      result: 'draw'
+    },
+    {
+      id: 'past3',
+      homeTeam: 'Bhaalu Squad',
+      awayTeam: 'Lightning FC',
+      homeScore: 1,
+      awayScore: 2,
+      date: '2024-08-01',
+      venue: 'City Ground',
+      result: 'loss'
+    }
+  ]);
 
   const [liveGames] = useState<LiveGame[]>([
     {
@@ -140,6 +187,37 @@ const Dashboard = () => {
   const handleLiveGameClick = (game: LiveGame) => {
     setSelectedLiveGame(game);
     setIsLiveGameOpen(true);
+  };
+
+  const handlePastMatchClick = (match: PastMatch) => {
+    setSelectedPastMatch(match);
+    setIsPastMatchOpen(true);
+  };
+
+  const getResultColor = (result: string) => {
+    switch (result) {
+      case 'win':
+        return 'text-accent';
+      case 'loss':
+        return 'text-destructive';
+      case 'draw':
+        return 'text-secondary';
+      default:
+        return 'text-muted-foreground';
+    }
+  };
+
+  const getResultBadge = (result: string) => {
+    switch (result) {
+      case 'win':
+        return 'bg-accent/10 text-accent border-accent/20';
+      case 'loss':
+        return 'bg-destructive/10 text-destructive border-destructive/20';
+      case 'draw':
+        return 'bg-secondary/10 text-secondary border-secondary/20';
+      default:
+        return 'bg-muted text-muted-foreground';
+    }
   };
 
   return (
@@ -365,6 +443,76 @@ const Dashboard = () => {
         </div>
       </div>
 
+      {/* Past Matches Section */}
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-poppins font-bold text-foreground flex items-center space-x-2">
+            <Trophy className="w-6 h-6 text-primary" />
+            <span>Past Matches</span>
+          </h2>
+          <div className="text-sm text-muted-foreground">
+            {pastMatches.length} recent matches
+          </div>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+          {pastMatches.map((match) => (
+            <Card 
+              key={match.id} 
+              className="card-field animate-slide-up p-6 cursor-pointer hover:scale-105 transition-transform duration-200"
+              onClick={() => handlePastMatchClick(match)}
+            >
+              <div className="space-y-4">
+                {/* Result Badge */}
+                <div className="flex items-center justify-between">
+                  <span className={`px-3 py-1 rounded-full text-xs font-medium border ${getResultBadge(match.result)}`}>
+                    {match.result.toUpperCase()}
+                  </span>
+                  <div className="text-sm text-muted-foreground">
+                    {new Date(match.date).toLocaleDateString('en-US', { 
+                      month: 'short', 
+                      day: 'numeric' 
+                    })}
+                  </div>
+                </div>
+
+                {/* Teams and Score */}
+                <div className="text-center">
+                  <div className="flex items-center justify-center space-x-4 mb-2">
+                    <div className="text-right flex-1">
+                      <div className="font-semibold text-foreground">{match.homeTeam}</div>
+                      <div className="text-xs text-muted-foreground">Home</div>
+                    </div>
+                    
+                    <div className={`text-2xl font-bold px-4 ${getResultColor(match.result)}`}>
+                      {match.homeScore} - {match.awayScore}
+                    </div>
+                    
+                    <div className="text-left flex-1">
+                      <div className="font-semibold text-foreground">{match.awayTeam}</div>
+                      <div className="text-xs text-muted-foreground">Away</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Match Info */}
+                <div className="text-center">
+                  <div className="flex items-center justify-center space-x-2 text-sm text-muted-foreground">
+                    <MapPin className="w-4 h-4" />
+                    <span>{match.venue}</span>
+                  </div>
+                </div>
+
+                {/* Click to View */}
+                <div className="text-center text-sm text-primary font-medium">
+                  Click to view highlights →
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      </div>
+
       {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="card-player text-center">
@@ -390,6 +538,13 @@ const Dashboard = () => {
         game={selectedLiveGame}
         isOpen={isLiveGameOpen}
         onClose={() => setIsLiveGameOpen(false)}
+      />
+
+      {/* Past Match Modal */}
+      <PastMatchView
+        match={selectedPastMatch}
+        isOpen={isPastMatchOpen}
+        onClose={() => setIsPastMatchOpen(false)}
       />
     </div>
   );
