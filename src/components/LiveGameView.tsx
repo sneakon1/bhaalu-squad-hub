@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Play, Pause, Volume2, Maximize, VolumeX } from 'lucide-react';
+import { X, Play, Pause, Volume2, Maximize, VolumeX, ArrowLeft } from 'lucide-react';
 import { Dialog, DialogContent, DialogOverlay } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import LiveMatchCard from './LiveMatchCard';
@@ -35,6 +35,15 @@ const LiveGameView = ({ game, isOpen, onClose }: LiveGameViewProps) => {
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b">
             <div className="flex items-center space-x-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="hover:bg-muted -ml-2"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
               <div className="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
               <h2 className="text-lg font-semibold">
                 {game.homeTeam} vs {game.awayTeam} - LIVE

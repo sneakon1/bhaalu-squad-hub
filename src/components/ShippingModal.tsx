@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { CreditCard, Truck, X } from 'lucide-react';
+import { CreditCard, Truck, X, ArrowLeft } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 const ShippingModal = ({ product, selectedSize = 'M', onClose }) => {
@@ -46,6 +46,15 @@ const ShippingModal = ({ product, selectedSize = 'M', onClose }) => {
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={onClose}
+                className="-ml-2"
+              >
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back
+              </Button>
               {step === 'shipping' ? (
                 <>
                   <Truck className="w-5 h-5" />

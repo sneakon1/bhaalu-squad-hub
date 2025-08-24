@@ -28,7 +28,10 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
-            <div className="flex items-center space-x-3">
+            <button 
+              onClick={() => onTabChange('dashboard')}
+              className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
+            >
               <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary-light rounded-xl flex items-center justify-center">
                 <Trophy className="w-6 h-6 text-primary-foreground" />
               </div>
@@ -36,7 +39,7 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
                 <h1 className="text-xl font-poppins font-bold text-foreground">Bhaalu Squad</h1>
                 <p className="text-xs text-muted-foreground">Football Portal</p>
               </div>
-            </div>
+            </button>
 
             {/* Desktop Navigation */}
             <nav className="hidden md:flex items-center space-x-1">
