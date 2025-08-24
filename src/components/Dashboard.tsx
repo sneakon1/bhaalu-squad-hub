@@ -1,8 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Calendar, MapPin, Users, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import heroImage from '@/assets/football-hero.jpg';
+import footballSunset from '@/assets/football-sunset.jpg';
+import footballAction from '@/assets/football-action.jpg';
+import footballStadium from '@/assets/football-stadium.jpg';
+import footballTraining from '@/assets/football-training.jpg';
 
 interface Game {
   id: string;
@@ -16,6 +20,17 @@ interface Game {
 }
 
 const Dashboard = () => {
+  const heroImages = [heroImage, footballSunset, footballAction, footballStadium, footballTraining];
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % heroImages.length);
+    }, 5000);
+    
+    return () => clearInterval(interval);
+  }, [heroImages.length]);
+
   const [games, setGames] = useState<Game[]>([
     {
       id: '1',
@@ -89,11 +104,22 @@ const Dashboard = () => {
     <div className="space-y-8">
       {/* Hero Section */}
       <div className="relative overflow-hidden rounded-2xl">
-        <div 
-          className="h-64 bg-cover bg-center bg-no-repeat"
-          style={{ backgroundImage: `url(${heroImage})` }}
-        >
+        <div className="relative h-64">
+          {/* Background Images with Smooth Transitions */}
+          {heroImages.map((image, index) => (
+            <div
+              key={index}
+              className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ${
+                index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+              }`}
+              style={{ backgroundImage: `url(${image})` }}
+            />
+          ))}
+          
+          {/* Overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary-light/80"></div>
+          
+          {/* Content */}
           <div className="relative h-full flex items-center justify-center text-center">
             <div className="animate-fade-in">
               <h1 className="text-4xl md:text-5xl font-poppins font-bold text-primary-foreground mb-4">
@@ -103,6 +129,21 @@ const Dashboard = () => {
                 Your football team's central hub for games, polls, and team coordination
               </p>
             </div>
+          </div>
+          
+          {/* Slide Indicators */}
+          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
+            {heroImages.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentImageIndex(index)}
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  index === currentImageIndex 
+                    ? 'bg-primary-foreground w-6' 
+                    : 'bg-primary-foreground/50'
+                }`}
+              />
+            ))}
           </div>
         </div>
       </div>

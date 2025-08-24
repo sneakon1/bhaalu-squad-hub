@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Shuffle, Phone, Users, Crown, ArrowRight, RotateCcw, UserCheck } from 'lucide-react';
+import { Shuffle, Shield, Users, ArrowRight, RotateCcw, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -95,7 +95,7 @@ const CaptainView = () => {
       <div className="text-center space-y-4">
         <div className="flex items-center justify-center space-x-3">
           <div className="p-3 bg-gradient-to-br from-secondary to-secondary-light rounded-xl">
-            <Crown className="w-8 h-8 text-secondary-foreground" />
+            <Shield className="w-8 h-8 text-secondary-foreground" />
           </div>
           <div>
             <h1 className="text-3xl font-poppins font-bold text-foreground">
@@ -109,71 +109,7 @@ const CaptainView = () => {
       </div>
 
       {/* Captain Actions */}
-      <div className="grid gap-6 md:grid-cols-3">
-        {/* Player Calling */}
-        <Card className="card-field p-6">
-          <div className="space-y-4">
-            <div className="flex items-center space-x-3">
-              <Phone className="w-6 h-6 text-primary" />
-              <h2 className="text-xl font-poppins font-semibold">Captain Talk</h2>
-            </div>
-            
-            <p className="text-muted-foreground text-sm">
-              Call players one by one who marked "In" for the game
-            </p>
-
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium">
-                  Player {currentPlayerIndex + 1} of {availablePlayers.length}
-                </span>
-                <Button 
-                  onClick={handleCallPlayer}
-                  disabled={currentPlayerIndex >= availablePlayers.length || callingPlayer !== null}
-                  className="btn-action"
-                  size="sm"
-                >
-                  <Phone className="w-4 h-4 mr-2" />
-                  Call Next Player
-                </Button>
-              </div>
-
-              {callingPlayer && (
-                <div className="bg-secondary/10 border border-secondary/20 rounded-lg p-4 animate-bounce-in">
-                  <div className="flex items-center space-x-3">
-                    <Avatar className="w-10 h-10">
-                      <AvatarFallback className="bg-secondary text-secondary-foreground">
-                        {callingPlayer.name.split(' ').map(n => n[0]).join('')}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <div className="font-semibold">Calling {callingPlayer.name}</div>
-                      <div className="text-sm text-muted-foreground">{callingPlayer.position}</div>
-                    </div>
-                    <div className="ml-auto">
-                      <div className="flex space-x-1">
-                        <div className="w-2 h-2 bg-secondary rounded-full animate-pulse"></div>
-                        <div className="w-2 h-2 bg-secondary rounded-full animate-pulse" style={{animationDelay: '0.2s'}}></div>
-                        <div className="w-2 h-2 bg-secondary rounded-full animate-pulse" style={{animationDelay: '0.4s'}}></div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              <Button 
-                onClick={() => setCurrentPlayerIndex(0)}
-                variant="outline"
-                size="sm"
-                className="w-full"
-              >
-                <RotateCcw className="w-4 h-4 mr-2" />
-                Reset Call List
-              </Button>
-            </div>
-          </div>
-        </Card>
-
+      <div className="grid gap-6 md:grid-cols-2">
         {/* Team Selection */}
         <Card className="card-field p-6">
           <div className="space-y-4">

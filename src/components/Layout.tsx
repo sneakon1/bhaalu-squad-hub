@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Trophy, Users, User, Settings, Menu, X } from 'lucide-react';
+import { Trophy, Users, User, Shield, Menu, X, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import FootballThemeToggle from './FootballThemeToggle';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -14,7 +15,7 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
   const navigation = [
     { id: 'dashboard', name: 'Dashboard', icon: Trophy },
     { id: 'players', name: 'Players', icon: Users },
-    { id: 'captain', name: 'Captain', icon: Settings },
+    { id: 'captain', name: 'Captain', icon: Shield },
     { id: 'admin', name: 'Admin', icon: Settings },
     { id: 'profile', name: 'Profile', icon: User },
   ];
@@ -37,7 +38,7 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
             </div>
 
             {/* Desktop Navigation */}
-            <nav className="hidden md:flex space-x-1">
+            <nav className="hidden md:flex items-center space-x-1">
               {navigation.map((item) => {
                 const Icon = item.icon;
                 return (
@@ -53,6 +54,11 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
                   </button>
                 );
               })}
+              
+              {/* Theme Toggle */}
+              <div className="ml-4 pl-4 border-l border-border">
+                <FootballThemeToggle />
+              </div>
             </nav>
 
             {/* Mobile menu button */}
@@ -89,6 +95,14 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
                   </button>
                 );
               })}
+              
+              {/* Mobile Theme Toggle */}
+              <div className="pt-2 mt-2 border-t border-border">
+                <div className="flex items-center justify-between px-3 py-2">
+                  <span className="font-medium text-muted-foreground">Theme</span>
+                  <FootballThemeToggle />
+                </div>
+              </div>
             </div>
           </div>
         )}

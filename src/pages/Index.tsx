@@ -4,6 +4,7 @@ import Dashboard from '@/components/Dashboard';
 import PlayersView from '@/components/PlayersView';
 import CaptainView from '@/components/CaptainView';
 import AdminView from '@/components/AdminView';
+import ProfileView from '@/components/ProfileView';
 
 const Index = () => {
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -19,12 +20,7 @@ const Index = () => {
       case 'admin':
         return <AdminView />;
       case 'profile':
-        return (
-          <div className="text-center py-12">
-            <h2 className="text-2xl font-poppins font-bold mb-4">Profile Coming Soon</h2>
-            <p className="text-muted-foreground">User profile and settings will be available here.</p>
-          </div>
-        );
+        return <ProfileView />;
       default:
         return <Dashboard />;
     }
