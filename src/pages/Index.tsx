@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Layout from '@/components/Layout';
 import Dashboard from '@/components/Dashboard';
 import PlayersView from '@/components/PlayersView';
+import ShopView from '@/components/ShopView';
 import CaptainView from '@/components/CaptainView';
 import AdminView from '@/components/AdminView';
 import ProfileView from '@/components/ProfileView';
@@ -15,6 +16,8 @@ const Index = () => {
         return <Dashboard />;
       case 'players':
         return <PlayersView />;
+      case 'shop':
+        return <ShopView />;
       case 'captain':
         return <CaptainView />;
       case 'admin':

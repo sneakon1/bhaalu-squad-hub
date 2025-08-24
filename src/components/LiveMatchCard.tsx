@@ -146,86 +146,23 @@ const LiveMatchCard = ({ game }: LiveMatchCardProps) => {
         </div>
       </div>
 
-      {/* Live Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <div className="text-center">
-          <div className="flex justify-between text-sm mb-1">
-            <span>{stats.possession.home}%</span>
-            <span className="text-muted-foreground">Possession</span>
-            <span>{stats.possession.away}%</span>
-          </div>
-          <div className="w-full bg-muted rounded-full h-2">
-            <div 
-              className="bg-primary h-2 rounded-full transition-all duration-500"
-              style={{ width: `${stats.possession.home}%` }}
-            ></div>
-          </div>
-        </div>
-
-        <div className="text-center">
-          <div className="flex items-center justify-center space-x-1 mb-1">
-            <Target className="w-4 h-4 text-primary" />
-            <span className="text-sm text-muted-foreground">Shots on Target</span>
-          </div>
-          <div className="text-lg font-semibold">
-            {stats.shotsOnTarget.home} - {stats.shotsOnTarget.away}
-          </div>
-        </div>
-
-        <div className="text-center">
-          <div className="flex items-center justify-center space-x-1 mb-1">
-            <Activity className="w-4 h-4 text-secondary" />
-            <span className="text-sm text-muted-foreground">Total Shots</span>
-          </div>
-          <div className="text-lg font-semibold">
-            {stats.shots.home} - {stats.shots.away}
-          </div>
-        </div>
-
-        <div className="text-center">
-          <div className="flex items-center justify-center space-x-1 mb-1">
-            <Users className="w-4 h-4 text-accent" />
-            <span className="text-sm text-muted-foreground">Fouls</span>
-          </div>
-          <div className="text-lg font-semibold">
-            {stats.fouls.home} - {stats.fouls.away}
-          </div>
-        </div>
-      </div>
-
       {/* Match Events */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <div>
-          <h3 className="font-semibold text-foreground mb-3 flex items-center space-x-2">
-            <Activity className="w-4 h-4" />
-            <span>Match Events</span>
-          </h3>
-          <div className="space-y-2 max-h-32 overflow-y-auto">
-            {events.map((event) => (
-              <div key={event.id} className="flex items-start space-x-3 text-sm">
-                <span className="text-muted-foreground font-mono">{event.time}</span>
-                <span className="text-lg">{getEventIcon(event.type)}</span>
-                <div>
-                  <div className="font-medium">{event.player}</div>
-                  <div className="text-muted-foreground text-xs">{event.description}</div>
-                </div>
+      <div>
+        <h3 className="font-semibold text-foreground mb-3 flex items-center space-x-2">
+          <Activity className="w-4 h-4" />
+          <span>Match Events</span>
+        </h3>
+        <div className="space-y-2 max-h-32 overflow-y-auto">
+          {events.map((event) => (
+            <div key={event.id} className="flex items-start space-x-3 text-sm">
+              <span className="text-muted-foreground font-mono">{event.time}</span>
+              <span className="text-lg">{getEventIcon(event.type)}</span>
+              <div>
+                <div className="font-medium">{event.player}</div>
+                <div className="text-muted-foreground text-xs">{event.description}</div>
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <h3 className="font-semibold text-foreground mb-3 flex items-center space-x-2">
-            <MessageSquare className="w-4 h-4" />
-            <span>Live Commentary</span>
-          </h3>
-          <div className="space-y-2 max-h-32 overflow-y-auto">
-            {commentary.map((comment, index) => (
-              <div key={index} className="text-sm text-muted-foreground border-l-2 border-primary/30 pl-3">
-                {comment}
-              </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
       </div>
     </Card>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Trophy, Users, User, Shield, Menu, X, Settings } from 'lucide-react';
+import { Trophy, Users, User, Shield, Menu, X, Settings, ShoppingBag } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import FootballThemeToggle from './FootballThemeToggle';
 
@@ -15,6 +15,7 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
   const navigation = [
     { id: 'dashboard', name: 'Dashboard', icon: Trophy },
     { id: 'players', name: 'Players', icon: Users },
+    { id: 'shop', name: 'Shop', icon: ShoppingBag },
     { id: 'captain', name: 'Captain', icon: Shield },
     { id: 'admin', name: 'Admin', icon: Settings },
     { id: 'profile', name: 'Profile', icon: User },
