@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 interface Player {
   id: string;
   name: string;
+  email: string;
   position: string;
   favoritePlayer: string;
   avatar?: string;
@@ -137,16 +138,9 @@ const PlayerCard = ({ player, canRate = false, onRate }: PlayerCardProps) => {
               {renderStars(userRating, true)}
             </div>
             {userRating > 0 && (
-              <Button 
-                size="sm" 
-                className="btn-action mt-3 w-full"
-                onClick={() => {
-                  // Rating already handled in handleStarClick
-                  setUserRating(0);
-                }}
-              >
-                Submit Rating
-              </Button>
+              <div className="text-xs text-green-600 mt-2">
+                Rating submitted!
+              </div>
             )}
           </div>
         )}

@@ -16,7 +16,7 @@ const Index = () => {
       case 'dashboard':
         return <Dashboard />;
       case 'players':
-        return <PlayersView />;
+        return <PlayersView onTabChange={setActiveTab} />;
       case 'shop':
         return <ShopView />;
       case 'captain':

@@ -115,38 +115,30 @@ const Dashboard = () => {
     }
   ]);
 
-  const [games, setGames] = useState<Game[]>([
-    {
-      id: '1',
-      title: 'Weekend Match vs Eagles',
-      date: '2024-08-26',
-      time: '10:00 AM',
-      venue: 'Central Park Field',
-      playersIn: 12,
-      maxPlayers: 16,
-      userStatus: null,
-    },
-    {
-      id: '2',
-      title: 'Practice Session',
-      date: '2024-08-28',
-      time: '6:00 PM',
-      venue: 'Local Sports Complex',
-      playersIn: 8,
-      maxPlayers: 16,
-      userStatus: 'in',
-    },
-    {
-      id: '3',
-      title: 'Championship Finals',
-      date: '2024-09-01',
-      time: '2:00 PM',
-      venue: 'Stadium Arena',
-      playersIn: 15,
-      maxPlayers: 16,
-      userStatus: 'out',
-    },
-  ]);
+  const [games, setGames] = useState<Game[]>([]);
+
+  useEffect(() => {
+    const fetchGames = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/games/upcoming');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Failed to fetch games');
+        setGames(data.map((g: any) => ({
+          id: g._id,
+          title: g.name,
+          date: g.date,
+          time: new Date(g.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          venue: g.location,
+          playersIn: 0, // You can update this if you track players
+          maxPlayers: g.maxPlayers || 16,
+          userStatus: null,
+        })));
+      } catch (err) {
+        setGames([]);
+      }
+    };
+    fetchGames();
+  }, []);
 
   const handlePollVote = (gameId: string, status: 'in' | 'out') => {
     setGames(prevGames =>

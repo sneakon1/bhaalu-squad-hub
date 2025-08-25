@@ -29,31 +29,40 @@ const AuthView = ({ onBack }: AuthViewProps) => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    if (isLogin) {
-      toast({
-        title: "Login Successful!",
-        description: `Welcome back, ${formData.email}!`,
+    const endpoint = isLogin
+      ? 'http://localhost:5000/api/login'
+      : 'http://localhost:5000/api/signup';
+    const payload = isLogin
+      ? { email: formData.email, password: formData.password }
+      : { email: formData.email, password: formData.password };
+    try {
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
       });
-    } else {
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Authentication failed');
+  // Store JWT token and user email
+  localStorage.setItem('authToken', data.token);
+  localStorage.setItem('userEmail', formData.email);
       toast({
-        title: "Account Created!",
-        description: `Welcome to Bhaalu Squad, ${formData.name}!`,
+        title: isLogin ? 'Login Successful!' : 'Account Created!',
+        description: isLogin
+          ? `Welcome back, ${formData.email}!`
+          : `Welcome to Bhaalu Squad, ${formData.name}!`,
+      });
+      setFormData({ name: '', email: '', password: '', phone: '' });
+      onBack();
+    } catch (err: any) {
+      toast({
+        title: 'Error',
+        description: err.message,
+        variant: 'destructive',
       });
     }
-    
-    // Reset form
-    setFormData({
-      name: '',
-      email: '',
-      password: '',
-      phone: ''
-    });
-    
-    // Go back to dashboard
-    onBack();
   };
 
   const handleGoogleAuth = () => {

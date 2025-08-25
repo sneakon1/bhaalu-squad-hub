@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Trophy, Users, User, Shield, Menu, X, Settings, ShoppingBag, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import SimpleThemeToggle from './SimpleThemeToggle';
@@ -20,6 +20,16 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
     { id: 'admin', name: 'Admin', icon: Settings },
     { id: 'profile', name: 'Profile', icon: User },
   ];
+
+  // Get user info from localStorage
+  const userEmail = localStorage.getItem('userEmail');
+  const [userMenuOpen, setUserMenuOpen] = useState(false);
+
+  const handleLogout = () => {
+    localStorage.removeItem('userName');
+    localStorage.removeItem('userEmail');
+    window.location.reload();
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -59,16 +69,39 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
                 );
               })}
               
-              {/* Login/Signup Button */}
-              <Button
-                onClick={() => onTabChange('auth')}
-                variant="outline"
-                size="sm"
-                className="ml-4"
-              >
-                <LogIn className="w-4 h-4 mr-2" />
-                Login
-              </Button>
+
+              {/* User Menu or Login Button */}
+              {userEmail ? (
+                <div className="relative ml-4">
+                  <button
+                    className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-muted hover:bg-muted/80"
+                    onClick={() => setUserMenuOpen((open) => !open)}
+                  >
+                    <User className="w-5 h-5" />
+                    <span className="font-medium">{userEmail}</span>
+                  </button>
+                  {userMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-40 bg-card border border-border rounded shadow-lg z-10">
+                      <button
+                        className="w-full text-left px-4 py-2 hover:bg-muted"
+                        onClick={handleLogout}
+                      >
+                        Log Out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Button
+                  onClick={() => onTabChange('auth')}
+                  variant="outline"
+                  size="sm"
+                  className="ml-4"
+                >
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Login
+                </Button>
+              )}
               
               {/* Theme Toggle */}
               <div className="ml-4 pl-4 border-l border-border">
@@ -111,19 +144,42 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
                 );
               })}
               
-              {/* Mobile Login/Signup Button */}
-              <Button
-                onClick={() => {
-                  onTabChange('auth');
-                  setMobileMenuOpen(false);
-                }}
-                variant="outline"
-                size="sm"
-                className="w-full mt-2"
-              >
-                <LogIn className="w-4 h-4 mr-2" />
-                Login
-              </Button>
+
+              {/* Mobile User Menu or Login Button */}
+              {userEmail ? (
+                <div className="relative w-full mt-2">
+                  <button
+                    className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-muted hover:bg-muted/80 w-full"
+                    onClick={() => setUserMenuOpen((open) => !open)}
+                  >
+                    <User className="w-5 h-5" />
+                    <span className="font-medium">{userEmail}</span>
+                  </button>
+                  {userMenuOpen && (
+                    <div className="absolute right-0 mt-2 w-40 bg-card border border-border rounded shadow-lg z-10">
+                      <button
+                        className="w-full text-left px-4 py-2 hover:bg-muted"
+                        onClick={handleLogout}
+                      >
+                        Log Out
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <Button
+                  onClick={() => {
+                    onTabChange('auth');
+                    setMobileMenuOpen(false);
+                  }}
+                  variant="outline"
+                  size="sm"
+                  className="w-full mt-2"
+                >
+                  <LogIn className="w-4 h-4 mr-2" />
+                  Login
+                </Button>
+              )}
               
               {/* Mobile Theme Toggle */}
               <div className="pt-2 mt-2 border-t border-border">

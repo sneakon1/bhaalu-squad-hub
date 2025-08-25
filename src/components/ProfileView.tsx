@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -39,42 +39,165 @@ interface UserProfile {
 const ProfileView = () => {
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
-  const [profile, setProfile] = useState<UserProfile>({
-    name: 'Rajesh Kumar',
-    email: 'rajesh.kumar@email.com',
-    phone: '+91 98765 43210',
-    position: 'Midfielder',
-    favoritePlayer: 'Sunil Chhetri',
-    bio: 'Passionate midfielder with 5+ years of experience. Love creating plays and supporting both offense and defense.',
-    profilePicture: '',
-    availableThisWeek: true,
-    rating: 4.2,
-    gamesPlayed: 47,
-    goals: 12,
-    assists: 23,
-  });
 
-  const [editProfile, setEditProfile] = useState<UserProfile>(profile);
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [editProfile, setEditProfile] = useState<UserProfile | null>(null);
+
+  // Replace with actual logged-in user's email
+  const userEmail = localStorage.getItem('userEmail') || '';
+  const [fetchError, setFetchError] = useState<string | null>(null);
+
+  // Load draft from localStorage on mount
+  const loadDraftFromStorage = () => {
+    const draftKey = `profileDraft_${userEmail}`;
+    const savedDraft = localStorage.getItem(draftKey);
+    return savedDraft ? JSON.parse(savedDraft) : null;
+  };
+
+  // Save draft to localStorage
+  const saveDraftToStorage = (data: UserProfile) => {
+    const draftKey = `profileDraft_${userEmail}`;
+    localStorage.setItem(draftKey, JSON.stringify(data));
+  };
+
+  // Clear draft from localStorage
+  const clearDraftFromStorage = () => {
+    const draftKey = `profileDraft_${userEmail}`;
+    localStorage.removeItem(draftKey);
+  };
+
+  // Fetch profile from backend on mount
+  React.useEffect(() => {
+    if (!userEmail) {
+      setFetchError('No user email found. Please log in.');
+      return;
+    }
+    fetch(`http://localhost:5000/api/profile/${userEmail}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data && !data.message) {
+          const fetchedProfile = {
+            name: data.name,
+            email: data.email,
+            phone: data.phone || '',
+            position: data.preferredPosition || '',
+            favoritePlayer: data.favPlayer || '',
+            bio: data.aboutMe || '',
+            profilePicture: data.profilePicture || '',
+            availableThisWeek: data.availableThisWeek || false,
+            rating: data.rating || 0,
+            gamesPlayed: data.gamesPlayed || 0,
+            goals: data.goals || 0,
+            assists: data.assists || 0,
+          };
+          setProfile(fetchedProfile);
+          
+          // Check if there's a saved draft
+          const savedDraft = loadDraftFromStorage();
+          if (savedDraft) {
+            setEditProfile(savedDraft);
+            setIsEditing(true);
+          } else {
+            setEditProfile(fetchedProfile);
+            setIsEditing(false);
+          }
+        } else {
+          // No profile found, check for saved draft or create new
+          setProfile(null);
+          const savedDraft = loadDraftFromStorage();
+          if (savedDraft) {
+            setEditProfile(savedDraft);
+          } else {
+            setEditProfile({
+              name: '',
+              email: userEmail,
+              phone: '',
+              position: '',
+              favoritePlayer: '',
+              bio: '',
+              profilePicture: '',
+              availableThisWeek: false,
+              rating: 0,
+              gamesPlayed: 0,
+              goals: 0,
+              assists: 0,
+            });
+          }
+          setIsEditing(true);
+        }
+      })
+      .catch(() => {
+        setFetchError('Failed to fetch profile. Please try again.');
+      });
+  }, [userEmail]);
+
+
+  React.useEffect(() => {
+    if (profile && !isEditing) {
+      setEditProfile(profile);
+    }
+  }, [profile, isEditing]);
 
   const handleInputChange = (field: keyof UserProfile, value: string | boolean) => {
-    setEditProfile(prev => ({
-      ...prev,
+    const updatedProfile = {
+      ...editProfile,
       [field]: value
-    }));
+    };
+    setEditProfile(updatedProfile);
+    
+    // Save to localStorage whenever form data changes
+    if (isEditing) {
+      saveDraftToStorage(updatedProfile);
+    }
   };
 
-  const handleSave = () => {
-    setProfile(editProfile);
-    setIsEditing(false);
-    toast({
-      title: "Profile Updated",
-      description: "Your profile has been successfully updated.",
-    });
+
+  const handleSave = async () => {
+    if (!editProfile) return;
+    try {
+      const method = profile ? 'PUT' : 'POST';
+      const url = profile
+        ? `http://localhost:5000/api/profile/${editProfile.email}`
+        : 'http://localhost:5000/api/profile';
+      const res = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editProfile.name,
+          email: editProfile.email,
+          phone: editProfile.phone,
+          preferredPosition: editProfile.position,
+          favPlayer: editProfile.favoritePlayer,
+          availableThisWeek: editProfile.availableThisWeek,
+          aboutMe: editProfile.bio,
+          profilePicture: editProfile.profilePicture,
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Profile update failed');
+      setProfile(editProfile);
+      setIsEditing(false);
+      // Clear draft from localStorage after successful save
+      clearDraftFromStorage();
+      toast({
+        title: 'Profile Updated',
+        description: 'Your profile has been successfully updated.',
+      });
+    } catch (err: any) {
+      toast({
+        title: 'Error',
+        description: err.message,
+        variant: 'destructive',
+      });
+    }
   };
+
 
   const handleCancel = () => {
     setEditProfile(profile);
     setIsEditing(false);
+    // Clear draft from localStorage when canceling
+    clearDraftFromStorage();
   };
 
   const handleImageUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,6 +215,17 @@ const ProfileView = () => {
   };
 
   const positions = ['Goalkeeper', 'Defender', 'Midfielder', 'Striker'];
+
+
+  if (fetchError) {
+    return <div className="text-center py-12 text-red-500">{fetchError}</div>;
+  }
+  if (editProfile) {
+    // Show profile form for new or existing user
+    // ...existing code...
+  } else {
+    return <div className="text-center py-12">Loading profile...</div>;
+  }
 
   return (
     <div className="space-y-8">
@@ -120,9 +254,9 @@ const ProfileView = () => {
               {/* Profile Picture */}
               <div className="relative inline-block">
                 <Avatar className="w-32 h-32 mx-auto">
-                  <AvatarImage src={isEditing ? editProfile.profilePicture : profile.profilePicture} />
+                  <AvatarImage src={isEditing ? editProfile.profilePicture : profile?.profilePicture} />
                   <AvatarFallback className="text-2xl bg-primary text-primary-foreground">
-                    {profile.name.split(' ').map(n => n[0]).join('')}
+                    {editProfile.name.split(' ').map(n => n[0]).join('')}
                   </AvatarFallback>
                 </Avatar>
                 
@@ -143,10 +277,10 @@ const ProfileView = () => {
               {/* Name and Position */}
               <div>
                 <h2 className="text-2xl font-poppins font-bold text-foreground">
-                  {profile.name}
+                  {editProfile.name}
                 </h2>
                 <Badge variant="secondary" className="mt-2">
-                  {profile.position}
+                  {editProfile.position}
                 </Badge>
               </div>
 
@@ -157,9 +291,9 @@ const ProfileView = () => {
                     <Star
                       key={star}
                       className={`w-5 h-5 ${
-                        star <= Math.floor(profile.rating)
+                        star <= Math.floor(editProfile.rating)
                           ? 'text-yellow-400 fill-yellow-400'
-                          : star === Math.ceil(profile.rating)
+                          : star === Math.ceil(editProfile.rating)
                           ? 'text-yellow-400 fill-yellow-400 opacity-50'
                           : 'text-gray-300'
                       }`}
@@ -167,7 +301,7 @@ const ProfileView = () => {
                   ))}
                 </div>
                 <span className="text-lg font-semibold text-foreground">
-                  {profile.rating.toFixed(1)}
+                  {editProfile.rating.toFixed(1)}
                 </span>
               </div>
 
@@ -175,15 +309,15 @@ const ProfileView = () => {
               <div className="bg-muted/30 rounded-lg p-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    {profile.availableThisWeek ? (
+                    {editProfile.availableThisWeek ? (
                       <CheckCircle className="w-5 h-5 text-accent" />
                     ) : (
                       <XCircle className="w-5 h-5 text-destructive" />
                     )}
                     <span className="font-medium">This Week Status</span>
                   </div>
-                  <Badge variant={profile.availableThisWeek ? "default" : "secondary"}>
-                    {profile.availableThisWeek ? 'Available' : 'Not Available'}
+                  <Badge variant={editProfile.availableThisWeek ? "default" : "secondary"}>
+                    {editProfile.availableThisWeek ? 'Available' : 'Not Available'}
                   </Badge>
                 </div>
               </div>
@@ -196,15 +330,15 @@ const ProfileView = () => {
             <div className="space-y-4">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Games Played</span>
-                <span className="font-semibold">{profile.gamesPlayed}</span>
+                <span className="font-semibold">{editProfile.gamesPlayed}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Goals</span>
-                <span className="font-semibold">{profile.goals}</span>
+                <span className="font-semibold">{editProfile.goals}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Assists</span>
-                <span className="font-semibold">{profile.assists}</span>
+                <span className="font-semibold">{editProfile.assists}</span>
               </div>
             </div>
           </Card>
@@ -215,12 +349,12 @@ const ProfileView = () => {
           <Card className="card-field p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-poppins font-semibold">Personal Information</h3>
-              {!isEditing ? (
+              {!isEditing && profile ? (
                 <Button onClick={() => setIsEditing(true)} variant="outline">
                   <Edit3 className="w-4 h-4 mr-2" />
                   Edit Profile
                 </Button>
-              ) : (
+              ) : isEditing ? (
                 <div className="flex space-x-2">
                   <Button onClick={handleSave} className="btn-action">
                     <Save className="w-4 h-4 mr-2" />
@@ -230,7 +364,7 @@ const ProfileView = () => {
                     Cancel
                   </Button>
                 </div>
-              )}
+              ) : null}
             </div>
 
             <div className="grid gap-6 md:grid-cols-2">
@@ -242,7 +376,7 @@ const ProfileView = () => {
                 </Label>
                 <Input
                   id="name"
-                  value={isEditing ? editProfile.name : profile.name}
+                  value={isEditing ? editProfile.name : profile?.name || ''}
                   onChange={(e) => handleInputChange('name', e.target.value)}
                   disabled={!isEditing}
                 />
@@ -257,7 +391,7 @@ const ProfileView = () => {
                 <Input
                   id="email"
                   type="email"
-                  value={isEditing ? editProfile.email : profile.email}
+                  value={isEditing ? editProfile.email : profile?.email || ''}
                   onChange={(e) => handleInputChange('email', e.target.value)}
                   disabled={!isEditing}
                 />
@@ -271,7 +405,7 @@ const ProfileView = () => {
                 </Label>
                 <Input
                   id="phone"
-                  value={isEditing ? editProfile.phone : profile.phone}
+                  value={isEditing ? editProfile.phone : profile?.phone || ''}
                   onChange={(e) => handleInputChange('phone', e.target.value)}
                   disabled={!isEditing}
                 />
@@ -295,7 +429,7 @@ const ProfileView = () => {
                     ))}
                   </select>
                 ) : (
-                  <Input value={profile.position} disabled />
+                  <Input value={profile?.position || ''} disabled />
                 )}
               </div>
 
@@ -307,7 +441,7 @@ const ProfileView = () => {
                 </Label>
                 <Input
                   id="favoritePlayer"
-                  value={isEditing ? editProfile.favoritePlayer : profile.favoritePlayer}
+                  value={isEditing ? editProfile.favoritePlayer : profile?.favoritePlayer || ''}
                   onChange={(e) => handleInputChange('favoritePlayer', e.target.value)}
                   disabled={!isEditing}
                 />
@@ -321,12 +455,12 @@ const ProfileView = () => {
                 </Label>
                 <div className="flex items-center space-x-3">
                   <Switch
-                    checked={isEditing ? editProfile.availableThisWeek : profile.availableThisWeek}
+                    checked={isEditing ? editProfile.availableThisWeek : profile?.availableThisWeek || false}
                     onCheckedChange={(checked) => handleInputChange('availableThisWeek', checked)}
                     disabled={!isEditing}
                   />
                   <span className="text-sm text-muted-foreground">
-                    {(isEditing ? editProfile.availableThisWeek : profile.availableThisWeek) 
+                    {(isEditing ? editProfile.availableThisWeek : profile?.availableThisWeek) 
                       ? 'Ready to play' 
                       : 'Not available'
                     }
@@ -340,7 +474,7 @@ const ProfileView = () => {
               <Label htmlFor="bio">About Me</Label>
               <Textarea
                 id="bio"
-                value={isEditing ? editProfile.bio : profile.bio}
+                value={isEditing ? editProfile.bio : profile?.bio || ''}
                 onChange={(e) => handleInputChange('bio', e.target.value)}
                 disabled={!isEditing}
                 rows={4}

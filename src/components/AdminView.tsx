@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { Plus, Calendar, MapPin, Clock, Save, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -17,17 +17,7 @@ interface Game {
 }
 
 const AdminView = () => {
-  const [games, setGames] = useState<Game[]>([
-    {
-      id: '1',
-      title: 'Sunday League Match',
-      date: '2024-08-25',
-      time: '10:00',
-      venue: 'Central Park Field A',
-      description: 'Regular weekly match against the Eagles',
-      maxPlayers: 16
-    }
-  ]);
+  const [games, setGames] = useState<Game[]>([]);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -48,26 +38,61 @@ const AdminView = () => {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const newGame: Game = {
-      id: Date.now().toString(),
-      ...formData,
-      maxPlayers: Number(formData.maxPlayers)
-    };
-
-    setGames(prev => [newGame, ...prev]);
-    setFormData({
-      title: '',
-      date: '',
-      time: '',
-      venue: '',
-      description: '',
-      maxPlayers: 16
-    });
-    setIsAddingGame(false);
+    try {
+      const res = await fetch('http://localhost:5000/games', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.title,
+          date: new Date(`${formData.date}T${formData.time}`),
+          location: formData.venue,
+          description: formData.description,
+          maxPlayers: Number(formData.maxPlayers),
+          createdBy: 'admin', // Replace with actual user info if needed
+        })
+      });
+      const game = await res.json();
+      if (!res.ok) throw new Error(game.message || 'Failed to add game');
+      fetchGames();
+      setFormData({
+        title: '',
+        date: '',
+        time: '',
+        venue: '',
+        description: '',
+        maxPlayers: 16
+      });
+      setIsAddingGame(false);
+    } catch (err) {
+      alert(err.message);
+    }
   };
+
+  const fetchGames = async () => {
+    try {
+      const res = await fetch('http://localhost:5000/games/upcoming');
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.message || 'Failed to fetch games');
+      setGames(data.map((g: any) => ({
+        id: g._id,
+        title: g.name,
+        date: g.date,
+        time: new Date(g.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        venue: g.location,
+        description: g.description || '',
+        maxPlayers: g.maxPlayers || 16
+      })));
+    } catch (err) {
+      setGames([]);
+    }
+  };
+
+  // Fetch games on mount
+  React.useEffect(() => {
+    fetchGames();
+  }, []);
 
   return (
     <div className="space-y-8">
