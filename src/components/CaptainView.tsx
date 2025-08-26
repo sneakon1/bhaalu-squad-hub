@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Shuffle, Shield, Users, ArrowRight, RotateCcw, UserCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -22,18 +22,31 @@ interface Team {
 
 const CaptainView = () => {
   const [view, setView] = useState<'tools' | 'team-selection'>('tools');
-  const [availablePlayers] = useState<Player[]>([
-    { id: '1', name: 'Arjun Sharma', position: 'Striker', rating: 4.3, isAvailable: true },
-    { id: '2', name: 'Vikram Singh', position: 'Midfielder', rating: 4.1, isAvailable: true },
-    { id: '3', name: 'Rahul Patel', position: 'Defender', rating: 3.9, isAvailable: true },
-    { id: '4', name: 'Amit Gupta', position: 'Goalkeeper', rating: 4.5, isAvailable: true },
-    { id: '5', name: 'Sanjay Kumar', position: 'Midfielder', rating: 4.0, isAvailable: true },
-    { id: '6', name: 'Deepak Yadav', position: 'Striker', rating: 4.2, isAvailable: true },
-    { id: '7', name: 'Manish Verma', position: 'Defender', rating: 3.8, isAvailable: true },
-    { id: '8', name: 'Raj Malhotra', position: 'Midfielder', rating: 3.7, isAvailable: true },
-    { id: '9', name: 'Suresh Reddy', position: 'Defender', rating: 4.1, isAvailable: true },
-    { id: '10', name: 'Kiran Joshi', position: 'Striker', rating: 3.9, isAvailable: true },
-  ]);
+  const [availablePlayers, setAvailablePlayers] = useState<Player[]>([]);
+
+  useEffect(() => {
+    const fetchPlayers = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        const res = await fetch('http://localhost:5000/api/profile', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        const data = await res.json();
+        if (Array.isArray(data)) {
+          setAvailablePlayers(data.map((p: any) => ({
+            id: p._id,
+            name: p.name,
+            position: p.preferredPosition || 'Midfielder',
+            rating: p.rating || 3.0,
+            isAvailable: p.availableThisWeek || false
+          })).filter((p: Player) => p.isAvailable));
+        }
+      } catch (err) {
+        console.error('Failed to fetch players:', err);
+      }
+    };
+    fetchPlayers();
+  }, []);
 
   const [teams, setTeams] = useState<Team[]>([
     { name: 'Team Alpha', players: [], color: 'bg-blue-500' },
@@ -44,7 +57,7 @@ const CaptainView = () => {
   const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
 
   if (view === 'team-selection') {
-    return <TeamSelectionView />;
+    return <TeamSelectionView availablePlayers={availablePlayers} />;
   }
 
   const handleRandomTeamGeneration = () => {

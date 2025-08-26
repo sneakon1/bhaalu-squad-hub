@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import LiveGameView from './LiveGameView';
 import PastMatchView from './PastMatchView';
+import GameDetailsView from './GameDetailsView';
 import heroImage from '@/assets/football-hero.jpg';
 import footballSunset from '@/assets/football-sunset.jpg';
 import footballAction from '@/assets/football-action.jpg';
@@ -50,6 +51,10 @@ const Dashboard = () => {
   const [isLiveGameOpen, setIsLiveGameOpen] = useState(false);
   const [selectedPastMatch, setSelectedPastMatch] = useState<PastMatch | null>(null);
   const [isPastMatchOpen, setIsPastMatchOpen] = useState(false);
+  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+  const [isGameDetailsOpen, setIsGameDetailsOpen] = useState(false);
+  
+  const userEmail = localStorage.getItem('userEmail');
   
   useEffect(() => {
     const interval = setInterval(() => {
@@ -59,61 +64,9 @@ const Dashboard = () => {
     return () => clearInterval(interval);
   }, [heroImages.length]);
 
-  const [pastMatches] = useState<PastMatch[]>([
-    {
-      id: 'past1',
-      homeTeam: 'Bhaalu Squad',
-      awayTeam: 'Thunder FC',
-      homeScore: 3,
-      awayScore: 1,
-      date: '2024-08-15',
-      venue: 'Central Stadium',
-      result: 'win'
-    },
-    {
-      id: 'past2',
-      homeTeam: 'Eagles United',
-      awayTeam: 'Bhaalu Squad',
-      homeScore: 2,
-      awayScore: 2,
-      date: '2024-08-08',
-      venue: 'Sports Arena',
-      result: 'draw'
-    },
-    {
-      id: 'past3',
-      homeTeam: 'Bhaalu Squad',
-      awayTeam: 'Lightning FC',
-      homeScore: 1,
-      awayScore: 2,
-      date: '2024-08-01',
-      venue: 'City Ground',
-      result: 'loss'
-    }
-  ]);
+  const [pastMatches, setPastMatches] = useState<PastMatch[]>([]);
 
-  const [liveGames] = useState<LiveGame[]>([
-    {
-      id: 'live1',
-      homeTeam: 'Bhaalu Squad',
-      awayTeam: 'Thunder FC',
-      homeScore: 2,
-      awayScore: 1,
-      matchTime: '67\'',
-      status: 'live',
-      venue: 'Central Stadium'
-    },
-    {
-      id: 'live2',
-      homeTeam: 'Eagles United',
-      awayTeam: 'Lightning FC',
-      homeScore: 0,
-      awayScore: 0,
-      matchTime: 'HT',
-      status: 'halftime',
-      venue: 'Sports Arena'
-    }
-  ]);
+  const [liveGames, setLiveGames] = useState<LiveGame[]>([]);
 
   const [games, setGames] = useState<Game[]>([]);
 
@@ -123,48 +76,105 @@ const Dashboard = () => {
         const res = await fetch('http://localhost:5000/games/upcoming');
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Failed to fetch games');
-        setGames(data.map((g: any) => ({
-          id: g._id,
-          title: g.name,
-          date: g.date,
-          time: new Date(g.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          venue: g.location,
-          playersIn: 0, // You can update this if you track players
-          maxPlayers: g.maxPlayers || 16,
-          userStatus: null,
-        })));
+        setGames(data
+          .filter((g: any) => g.status !== 'live') // Exclude live games
+          .map((g: any) => {
+            const playersIn = g.players ? g.players.filter((p: any) => p.status === 'in').length : 0;
+            const userVote = g.players ? g.players.find((p: any) => p.email === userEmail) : null;
+            
+            return {
+              id: g._id,
+              title: g.name,
+              date: g.date,
+              time: new Date(g.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+              venue: g.location,
+              playersIn,
+              maxPlayers: g.maxPlayers || 16,
+              userStatus: userVote ? userVote.status : null,
+            };
+          }));
       } catch (err) {
         setGames([]);
       }
     };
-    fetchGames();
-  }, []);
 
-  const handlePollVote = (gameId: string, status: 'in' | 'out') => {
-    setGames(prevGames =>
-      prevGames.map(game => {
-        if (game.id === gameId) {
-          const wasIn = game.userStatus === 'in';
-          const wasOut = game.userStatus === 'out';
-          const isNowIn = status === 'in';
-          
-          let newPlayersIn = game.playersIn;
-          
-          if (wasIn && !isNowIn) {
-            newPlayersIn -= 1;
-          } else if (!wasIn && isNowIn) {
-            newPlayersIn += 1;
-          }
+    const fetchLiveGames = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/games/live');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Failed to fetch live games');
+        setLiveGames(data.map((g: any) => ({
+          id: g._id,
+          homeTeam: g.teams?.teamA?.name || 'Team A',
+          awayTeam: g.teams?.teamB?.name || 'Team B',
+          homeScore: g.teams?.teamA?.score || 0,
+          awayScore: g.teams?.teamB?.score || 0,
+          matchTime: '0\'',
+          status: 'live' as const,
+          venue: g.location
+        })));
+      } catch (err) {
+        setLiveGames([]);
+      }
+    };
+
+    const fetchPastMatches = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/games/completed');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Failed to fetch completed games');
+        setPastMatches(data.map((g: any) => {
+          const homeScore = g.teams?.teamA?.score || 0;
+          const awayScore = g.teams?.teamB?.score || 0;
+          let result: 'win' | 'loss' | 'draw' = 'draw';
+          if (homeScore > awayScore) result = 'win';
+          else if (homeScore < awayScore) result = 'loss';
           
           return {
-            ...game,
-            userStatus: status,
-            playersIn: Math.max(0, Math.min(newPlayersIn, game.maxPlayers)),
+            id: g._id,
+            homeTeam: g.teams?.teamA?.name || 'Team A',
+            awayTeam: g.teams?.teamB?.name || 'Team B',
+            homeScore,
+            awayScore,
+            date: g.date,
+            venue: g.location,
+            result
           };
-        }
-        return game;
-      })
-    );
+        }));
+      } catch (err) {
+        setPastMatches([]);
+      }
+    };
+
+    fetchGames();
+    fetchLiveGames();
+    fetchPastMatches();
+  }, [userEmail]);
+
+  const handlePollVote = async (gameId: string, status: 'in' | 'out') => {
+    if (!userEmail) return;
+    
+    try {
+      const res = await fetch(`http://localhost:5000/games/${gameId}/vote`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status, email: userEmail })
+      });
+      
+      const data = await res.json();
+      if (res.ok) {
+        // Update local state
+        setGames(prevGames =>
+          prevGames.map(game => 
+            game.id === gameId 
+              ? { ...game, userStatus: status, playersIn: data.playersIn }
+              : game
+          )
+        );
+      }
+    } catch (err) {
+      console.error('Failed to vote:', err);
+    }
   };
 
   const formatDate = (dateString: string) => {
@@ -181,9 +191,75 @@ const Dashboard = () => {
     setIsLiveGameOpen(true);
   };
 
+  const handleLiveGameUpdate = () => {
+    // Refresh live games and past matches data
+    const fetchLiveGames = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/games/live');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Failed to fetch live games');
+        setLiveGames(data.map((g: any) => ({
+          id: g._id,
+          homeTeam: g.teams?.teamA?.name || 'Team A',
+          awayTeam: g.teams?.teamB?.name || 'Team B',
+          homeScore: g.teams?.teamA?.score || 0,
+          awayScore: g.teams?.teamB?.score || 0,
+          matchTime: '0\'',
+          status: 'live' as const,
+          venue: g.location
+        })));
+      } catch (err) {
+        setLiveGames([]);
+      }
+    };
+    
+    const fetchPastMatches = async () => {
+      try {
+        const res = await fetch('http://localhost:5000/games/completed');
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.message || 'Failed to fetch completed games');
+        setPastMatches(data.map((g: any) => {
+          const homeScore = g.teams?.teamA?.score || 0;
+          const awayScore = g.teams?.teamB?.score || 0;
+          let result: 'win' | 'loss' | 'draw' = 'draw';
+          if (homeScore > awayScore) result = 'win';
+          else if (homeScore < awayScore) result = 'loss';
+          
+          return {
+            id: g._id,
+            homeTeam: g.teams?.teamA?.name || 'Team A',
+            awayTeam: g.teams?.teamB?.name || 'Team B',
+            homeScore,
+            awayScore,
+            date: g.date,
+            venue: g.location,
+            result
+          };
+        }));
+      } catch (err) {
+        setPastMatches([]);
+      }
+    };
+    
+    fetchLiveGames();
+    fetchPastMatches();
+  };
+
   const handlePastMatchClick = (match: PastMatch) => {
     setSelectedPastMatch(match);
     setIsPastMatchOpen(true);
+  };
+
+  const handleGameClick = (game: Game) => {
+    setSelectedGame(game);
+    setIsGameDetailsOpen(true);
+  };
+
+  // Refresh games when modal closes (to update live games)
+  const handleGameDetailsClose = () => {
+    setIsGameDetailsOpen(false);
+    // Refresh both upcoming and live games
+    window.location.reload();
   };
 
   const getResultColor = (result: string) => {
@@ -352,7 +428,11 @@ const Dashboard = () => {
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {games.map((game) => (
-            <Card key={game.id} className="card-field animate-slide-up p-6">
+            <Card 
+              key={game.id} 
+              className="card-field animate-slide-up p-6 cursor-pointer hover:scale-105 transition-transform duration-200"
+              onClick={() => handleGameClick(game)}
+            >
               <div className="space-y-4">
                 {/* Game Header */}
                 <div>
@@ -391,33 +471,45 @@ const Dashboard = () => {
                   </div>
                 </div>
 
-                {/* Poll Buttons */}
-                <div className="flex space-x-3">
-                  <Button
-                    onClick={() => handlePollVote(game.id, 'in')}
-                    className={`flex-1 poll-in ${
-                      game.userStatus === 'in' 
-                        ? 'ring-2 ring-accent ring-offset-2' 
-                        : ''
-                    }`}
-                    size="sm"
-                  >
-                    <CheckCircle className="w-4 h-4 mr-2" />
-                    I'm In
-                  </Button>
-                  <Button
-                    onClick={() => handlePollVote(game.id, 'out')}
-                    className={`flex-1 poll-out ${
-                      game.userStatus === 'out' 
-                        ? 'ring-2 ring-destructive ring-offset-2' 
-                        : ''
-                    }`}
-                    size="sm"
-                  >
-                    <XCircle className="w-4 h-4 mr-2" />
-                    I'm Out
-                  </Button>
-                </div>
+                {/* Poll Buttons - Only show if logged in */}
+                {userEmail ? (
+                  <div className="flex space-x-3">
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePollVote(game.id, 'in');
+                      }}
+                      className={`flex-1 poll-in ${
+                        game.userStatus === 'in' 
+                          ? 'ring-2 ring-accent ring-offset-2' 
+                          : ''
+                      }`}
+                      size="sm"
+                    >
+                      <CheckCircle className="w-4 h-4 mr-2" />
+                      I'm In
+                    </Button>
+                    <Button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handlePollVote(game.id, 'out');
+                      }}
+                      className={`flex-1 poll-out ${
+                        game.userStatus === 'out' 
+                          ? 'ring-2 ring-destructive ring-offset-2' 
+                          : ''
+                      }`}
+                      size="sm"
+                    >
+                      <XCircle className="w-4 h-4 mr-2" />
+                      I'm Out
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="text-center py-2 text-muted-foreground text-sm">
+                    Please log in to join games
+                  </div>
+                )}
 
                 {/* Status Indicator */}
                 {game.userStatus && (
@@ -429,6 +521,11 @@ const Dashboard = () => {
                     You've marked yourself as {game.userStatus === 'in' ? 'IN' : 'OUT'}
                   </div>
                 )}
+
+                {/* Click to View Details */}
+                <div className="text-center text-sm text-primary font-medium">
+                  Click to view details →
+                </div>
               </div>
             </Card>
           ))}
@@ -530,6 +627,7 @@ const Dashboard = () => {
         game={selectedLiveGame}
         isOpen={isLiveGameOpen}
         onClose={() => setIsLiveGameOpen(false)}
+        onGameUpdate={handleLiveGameUpdate}
       />
 
       {/* Past Match Modal */}
@@ -537,6 +635,13 @@ const Dashboard = () => {
         match={selectedPastMatch}
         isOpen={isPastMatchOpen}
         onClose={() => setIsPastMatchOpen(false)}
+      />
+
+      {/* Game Details Modal */}
+      <GameDetailsView
+        game={selectedGame}
+        isOpen={isGameDetailsOpen}
+        onClose={handleGameDetailsClose}
       />
     </div>
   );

@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { Plus, Calendar, MapPin, Clock, Save, Settings } from 'lucide-react';
+import { Plus, Calendar, MapPin, Clock, Save, Settings, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { useToast } from '@/hooks/use-toast';
 
 interface Game {
   id: string;
@@ -17,6 +18,9 @@ interface Game {
 }
 
 const AdminView = () => {
+  const { toast } = useToast();
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [credentials, setCredentials] = useState({ username: '', password: '' });
   const [games, setGames] = useState<Game[]>([]);
 
   const [formData, setFormData] = useState({
@@ -89,10 +93,72 @@ const AdminView = () => {
     }
   };
 
-  // Fetch games on mount
-  React.useEffect(() => {
-    fetchGames();
-  }, []);
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (credentials.username === 'admin' && credentials.password === 'admin123') {
+      setIsAuthenticated(true);
+      fetchGames();
+    } else {
+      toast({
+        title: 'Authentication Failed',
+        description: 'Invalid username or password',
+        variant: 'destructive'
+      });
+    }
+  };
+
+
+
+  // Show login form if not authenticated
+  if (!isAuthenticated) {
+    return (
+      <div className="space-y-8">
+        <div className="text-center space-y-4">
+          <div className="flex items-center justify-center space-x-3">
+            <div className="p-3 bg-gradient-to-br from-primary to-primary-light rounded-xl">
+              <Lock className="w-8 h-8 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-poppins font-bold text-foreground">
+                Admin Access
+              </h1>
+              <p className="text-muted-foreground">
+                Please authenticate to access admin panel
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <Card className="card-field p-6 max-w-md mx-auto">
+          <form onSubmit={handleLogin} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="username">Username</Label>
+              <Input
+                id="username"
+                value={credentials.username}
+                onChange={(e) => setCredentials(prev => ({ ...prev, username: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                value={credentials.password}
+                onChange={(e) => setCredentials(prev => ({ ...prev, password: e.target.value }))}
+                required
+              />
+            </div>
+            <Button type="submit" className="w-full btn-action">
+              <Lock className="w-4 h-4 mr-2" />
+              Login
+            </Button>
+          </form>
+        </Card>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">

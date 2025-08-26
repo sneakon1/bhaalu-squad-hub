@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Crown, Users, Coins, RotateCcw, Trophy, User } from 'lucide-react';
+import { Crown, Users, Coins, RotateCcw, Trophy, User, Edit3, Radio } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Input } from '@/components/ui/input';
 
 interface Player {
   id: string;
@@ -20,24 +21,20 @@ interface Team {
   color: string;
 }
 
-const TeamSelectionView = () => {
-  const [availablePlayers] = useState<Player[]>([
-    { id: '1', name: 'Arjun Sharma', position: 'Striker', rating: 4.3, isAvailable: true },
-    { id: '2', name: 'Vikram Singh', position: 'Midfielder', rating: 4.1, isAvailable: true },
-    { id: '3', name: 'Rahul Patel', position: 'Defender', rating: 3.9, isAvailable: true },
-    { id: '4', name: 'Amit Gupta', position: 'Goalkeeper', rating: 4.5, isAvailable: true },
-    { id: '5', name: 'Sanjay Kumar', position: 'Midfielder', rating: 4.0, isAvailable: true },
-    { id: '6', name: 'Deepak Yadav', position: 'Striker', rating: 4.2, isAvailable: true },
-    { id: '7', name: 'Manish Verma', position: 'Defender', rating: 3.8, isAvailable: true },
-    { id: '8', name: 'Raj Malhotra', position: 'Midfielder', rating: 3.7, isAvailable: true },
-    { id: '9', name: 'Suresh Reddy', position: 'Defender', rating: 4.1, isAvailable: true },
-    { id: '10', name: 'Kiran Joshi', position: 'Striker', rating: 3.9, isAvailable: true },
-  ]);
+interface TeamSelectionViewProps {
+  availablePlayers: Player[];
+  onTeamsUpdate?: (teams: Team[]) => void;
+  onGoLive?: (teams: Team[]) => void;
+}
+
+const TeamSelectionView = ({ availablePlayers, onTeamsUpdate, onGoLive }: TeamSelectionViewProps) => {
 
   const [teams, setTeams] = useState<Team[]>([
     { name: 'Team Alpha', captain: 'Captain A', players: [], color: 'bg-blue-500' },
     { name: 'Team Beta', captain: 'Captain B', players: [], color: 'bg-red-500' },
   ]);
+  const [editingTeam, setEditingTeam] = useState<number | null>(null);
+  const [tempTeamName, setTempTeamName] = useState('');
 
   const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
   const [currentTurn, setCurrentTurn] = useState<number>(0); // 0 for Team Alpha, 1 for Team Beta
@@ -66,6 +63,7 @@ const TeamSelectionView = () => {
     const updatedTeams = [...teams];
     updatedTeams[currentTurn].players.push(player);
     setTeams(updatedTeams);
+    onTeamsUpdate?.(updatedTeams);
 
     // Switch turns
     setCurrentTurn(currentTurn === 0 ? 1 : 0);
@@ -74,6 +72,25 @@ const TeamSelectionView = () => {
     if (newSelectedPlayers.length === availablePlayers.length) {
       setGamePhase('completed');
     }
+  };
+
+  const handleTeamNameEdit = (teamIndex: number) => {
+    setEditingTeam(teamIndex);
+    setTempTeamName(teams[teamIndex].name);
+  };
+
+  const handleTeamNameSave = (teamIndex: number) => {
+    const updatedTeams = [...teams];
+    updatedTeams[teamIndex].name = tempTeamName;
+    setTeams(updatedTeams);
+    onTeamsUpdate?.(updatedTeams);
+    setEditingTeam(null);
+    setTempTeamName('');
+  };
+
+  const handleTeamNameCancel = () => {
+    setEditingTeam(null);
+    setTempTeamName('');
   };
 
   const resetSelection = () => {
@@ -238,7 +255,33 @@ const TeamSelectionView = () => {
                     {/* Team Header */}
                     <div className="flex items-center space-x-3">
                       <div className={`w-4 h-4 rounded-full ${team.color}`}></div>
-                      <h3 className="text-xl font-poppins font-semibold">{team.name}</h3>
+                      {editingTeam === index ? (
+                        <div className="flex items-center space-x-2 flex-1">
+                          <Input
+                            value={tempTeamName}
+                            onChange={(e) => setTempTeamName(e.target.value)}
+                            className="text-xl font-poppins font-semibold"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') handleTeamNameSave(index);
+                              if (e.key === 'Escape') handleTeamNameCancel();
+                            }}
+                            autoFocus
+                          />
+                          <Button size="sm" onClick={() => handleTeamNameSave(index)}>Save</Button>
+                          <Button size="sm" variant="outline" onClick={handleTeamNameCancel}>Cancel</Button>
+                        </div>
+                      ) : (
+                        <>
+                          <h3 className="text-xl font-poppins font-semibold">{team.name}</h3>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleTeamNameEdit(index)}
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </Button>
+                        </>
+                      )}
                       <Badge variant="secondary">
                         {team.players.length} players
                       </Badge>
@@ -293,7 +336,13 @@ const TeamSelectionView = () => {
       {gamePhase === 'completed' && (
         <div className="text-center py-8">
           <div className="text-2xl font-bold text-primary mb-4">🎉 Teams Ready!</div>
-          <p className="text-muted-foreground">Both teams have been selected. Good luck!</p>
+          <p className="text-muted-foreground mb-6">Both teams have been selected. Good luck!</p>
+          {onGoLive && (
+            <Button onClick={() => onGoLive(teams)} className="btn-action">
+              <Radio className="w-4 h-4 mr-2" />
+              Go Live
+            </Button>
+          )}
         </div>
       )}
     </div>
