@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import TeamSelectionView from './TeamSelectionView';
+import CaptainTeamSelection from './CaptainTeamSelection';
 
 interface Game {
   id: string;
@@ -203,7 +203,8 @@ const GameDetailsView = ({ game, isOpen, onClose }: GameDetailsViewProps) => {
             </Button>
           </div>
           <div className="p-4">
-            <TeamSelectionView 
+            <CaptainTeamSelection 
+              gameId={game.id}
               availablePlayers={playersIn} 
               onTeamsUpdate={handleTeamsUpdate}
               onGoLive={handleGoLive}

@@ -48,6 +48,13 @@ const AuthView = ({ onBack }: AuthViewProps) => {
   // Store JWT token and user email
   localStorage.setItem('authToken', data.token);
   localStorage.setItem('userEmail', formData.email);
+  
+  // Store admin status if admin email
+  if (formData.email === 'admin@bhaalu.com') {
+    localStorage.setItem('isAdmin', 'true');
+  } else {
+    localStorage.removeItem('isAdmin');
+  }
       toast({
         title: isLogin ? 'Login Successful!' : 'Account Created!',
         description: isLogin

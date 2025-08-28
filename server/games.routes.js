@@ -216,4 +216,122 @@ router.post('/:id/toggle-stream', async (req, res) => {
   }
 });
 
+// Rate players endpoint
+router.post('/:id/rate-players', async (req, res) => {
+  const { ratings, raterEmail } = req.body;
+  
+  try {
+    const game = await Game.findById(req.params.id);
+    if (!game) {
+      return res.status(404).json({ message: 'Game not found.' });
+    }
+    
+    // Initialize ratings array if it doesn't exist
+    if (!game.playerRatings) {
+      game.playerRatings = [];
+    }
+    
+    // Add ratings for each player
+    Object.entries(ratings).forEach(([playerEmail, rating]) => {
+      console.log('Saving rating:', playerEmail, rating, 'by', raterEmail);
+      game.playerRatings.push({
+        playerEmail,
+        rating: Number(rating),
+        ratedBy: raterEmail,
+        ratedAt: new Date()
+      });
+    });
+    
+    await game.save();
+    
+    res.json({ message: 'Ratings saved successfully!' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// Get player ratings by name
+router.get('/player-ratings/:playerName', async (req, res) => {
+  try {
+    const playerName = decodeURIComponent(req.params.playerName);
+    console.log('Getting ratings for player:', playerName);
+    
+    // First check if any games have ratings at all
+    const allGamesWithRatings = await Game.find({ 'playerRatings.0': { $exists: true } });
+    console.log('Total games with any ratings:', allGamesWithRatings.length);
+    
+    const games = await Game.find({ 'playerRatings.playerEmail': playerName });
+    console.log('Found games with ratings for this player:', games.length);
+    
+    let totalRating = 0;
+    let ratingCount = 0;
+    
+    games.forEach(game => {
+      console.log('Game ratings:', game.playerRatings);
+      game.playerRatings.forEach(rating => {
+        console.log('Checking rating:', rating.playerEmail, 'vs', playerName);
+        if (rating.playerEmail === playerName) {
+          totalRating += rating.rating;
+          ratingCount++;
+          console.log('Added rating:', rating.rating, 'Total now:', totalRating, 'Count:', ratingCount);
+        }
+      });
+    });
+    
+    const averageRating = ratingCount > 0 ? totalRating / ratingCount : 0;
+    console.log('Final average:', averageRating, 'from', ratingCount, 'ratings');
+    
+    res.json({ 
+      averageRating: Math.round(averageRating * 10) / 10,
+      totalRatings: ratingCount 
+    });
+  } catch (err) {
+    console.error('Rating fetch error:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// Get player stats
+router.get('/player-stats/:email', async (req, res) => {
+  try {
+    console.log('Looking for stats for email:', req.params.email);
+    
+    const games = await Game.find({
+      $or: [
+        { 'teams.teamA.players': req.params.email },
+        { 'teams.teamB.players': req.params.email },
+        { 'players.email': req.params.email }
+      ],
+      status: { $in: ['live', 'completed'] }
+    });
+    
+    console.log('Found games:', games.length);
+    
+    let gamesPlayed = games.length;
+    let goals = 0;
+    let assists = 0;
+    
+    // Get user's name from profile to match goals
+    const Profile = require('./profile');
+    const userProfile = await Profile.findOne({ email: req.params.email });
+    const userName = userProfile ? userProfile.name : null;
+    
+    games.forEach(game => {
+      console.log('Game goals:', game.goals);
+      game.goals.forEach(goal => {
+        console.log('Goal scorer:', goal.scorer, 'Looking for email:', req.params.email, 'or name:', userName);
+        if (goal.scorer === req.params.email || (userName && goal.scorer === userName)) {
+          goals++;
+        }
+      });
+    });
+    
+    console.log('Final stats:', { gamesPlayed, goals, assists });
+    res.json({ gamesPlayed, goals, assists });
+  } catch (err) {
+    console.error('Stats error:', err);
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
 module.exports = router;

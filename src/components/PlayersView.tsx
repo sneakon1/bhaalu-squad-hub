@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Search, Filter, Users, Trophy, LogIn } from 'lucide-react';
+import { Search, Filter, Users, Trophy, LogIn, Star } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import PlayerCard from './PlayerCard';
 
@@ -24,62 +25,76 @@ interface PlayersViewProps {
 const PlayersView = ({ onTabChange }: PlayersViewProps) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [positionFilter, setPositionFilter] = useState('all');
-  const [sortBy, setSortBy] = useState('name');
+  const [sortBy, setSortBy] = useState('rating');
 
   const [players, setPlayers] = useState<Player[]>([]);
   const userEmail = localStorage.getItem('userEmail');
 
   React.useEffect(() => {
-    const token = localStorage.getItem('authToken');
-    fetch('http://localhost:5000/api/profile', {
-      headers: token ? { Authorization: `Bearer ${token}` } : {}
-    })
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data)) {
-          setPlayers(data.map((p: any) => ({
-            id: p._id,
-            name: p.name,
-            email: p.email,
-            position: p.preferredPosition || '',
-            favoritePlayer: p.favPlayer || '',
-            avatar: p.profilePicture || '',
-            rating: p.rating || 0,
-            totalRatings: p.totalRatings || 0,
-            isOnline: p.availableThisWeek || false,
-          })));
+    const fetchPlayersWithRatings = async () => {
+      const token = localStorage.getItem('authToken');
+      if (!token) {
+        console.log('No auth token found');
+        return;
+      }
+      
+      try {
+        const res = await fetch('http://localhost:5000/api/profile', {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        
+        if (!res.ok) {
+          console.error('Profile fetch failed:', res.status, res.statusText);
+          return;
         }
-      });
+        
+        const data = await res.json();
+        
+        if (Array.isArray(data)) {
+          const playersWithRatings = await Promise.all(
+            data.map(async (p: any) => {
+              try {
+                const ratingRes = await fetch(`http://localhost:5000/games/player-ratings/${encodeURIComponent(p.name)}`);
+                const ratingData = await ratingRes.json();
+                console.log(`Ratings for ${p.name}:`, ratingData);
+                
+                return {
+                  id: p._id,
+                  name: p.name,
+                  email: p.email,
+                  position: p.preferredPosition || '',
+                  favoritePlayer: p.favPlayer || '',
+                  avatar: p.profilePicture || '',
+                  rating: ratingData.averageRating || 0,
+                  totalRatings: ratingData.totalRatings || 0,
+                  isOnline: p.availableThisWeek || false,
+                };
+              } catch (err) {
+                return {
+                  id: p._id,
+                  name: p.name,
+                  email: p.email,
+                  position: p.preferredPosition || '',
+                  favoritePlayer: p.favPlayer || '',
+                  avatar: p.profilePicture || '',
+                  rating: 0,
+                  totalRatings: 0,
+                  isOnline: p.availableThisWeek || false,
+                };
+              }
+            })
+          );
+          setPlayers(playersWithRatings);
+        }
+      } catch (err) {
+        console.error('Failed to fetch players:', err);
+      }
+    };
+    
+    fetchPlayersWithRatings();
   }, []);
 
-  const handleRatePlayer = async (playerId: string, rating: number) => {
-    const token = localStorage.getItem('authToken');
-    const player = players.find(p => p.id === playerId);
-    if (!player || !token) return;
-    
-    try {
-      const res = await fetch(`http://localhost:5000/api/profile/${player.email}/rate`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ rating })
-      });
-      
-      const data = await res.json();
-      if (res.ok) {
-        // Update local state with new rating
-        setPlayers(prev => prev.map(p => 
-          p.id === playerId 
-            ? { ...p, rating: data.rating, totalRatings: data.totalRatings }
-            : p
-        ));
-      }
-    } catch (err) {
-      console.error('Failed to rate player:', err);
-    }
-  };
+  // Rating function removed - only match ratings are displayed
 
   const filteredPlayers = players
     .filter(player => {
@@ -93,11 +108,11 @@ const PlayersView = ({ onTabChange }: PlayersViewProps) => {
     .sort((a, b) => {
       switch (sortBy) {
         case 'rating':
+        default:
           return b.rating - a.rating;
         case 'position':
           return a.position.localeCompare(b.position);
         case 'name':
-        default:
           return a.name.localeCompare(b.name);
       }
     });
@@ -151,14 +166,14 @@ const PlayersView = ({ onTabChange }: PlayersViewProps) => {
       <div className="text-center space-y-4">
         <div className="flex items-center justify-center space-x-3">
           <div className="p-3 bg-gradient-to-br from-primary to-primary-light rounded-xl">
-            <Users className="w-8 h-8 text-primary-foreground" />
+            <Trophy className="w-8 h-8 text-primary-foreground" />
           </div>
           <div>
             <h1 className="text-3xl font-poppins font-bold text-foreground">
-              Squad Players
+              Player Leaderboard
             </h1>
             <p className="text-muted-foreground">
-              {players.length} total players • {onlinePlayers} online
+              {players.length} total players • Ranked by performance
             </p>
           </div>
         </div>
@@ -212,15 +227,55 @@ const PlayersView = ({ onTabChange }: PlayersViewProps) => {
         </div>
       </div>
 
-      {/* Players Grid */}
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {filteredPlayers.map((player) => (
+      {/* Leaderboard */}
+      <div className="space-y-4">
+        {filteredPlayers.map((player, index) => (
           <div key={player.id} className="animate-slide-up">
-            <PlayerCard 
-              player={player} 
-              canRate={player.email !== localStorage.getItem('userEmail')}
-              onRate={handleRatePlayer}
-            />
+            <Card className="p-4 hover:shadow-lg transition-shadow">
+              <div className="flex items-center space-x-4">
+                {/* Rank */}
+                <div className={`w-12 h-12 rounded-full flex items-center justify-center font-bold text-lg ${
+                  index === 0 ? 'bg-yellow-500 text-white' :
+                  index === 1 ? 'bg-gray-400 text-white' :
+                  index === 2 ? 'bg-amber-600 text-white' :
+                  'bg-muted text-muted-foreground'
+                }`}>
+                  {index + 1}
+                </div>
+                
+                {/* Player Info */}
+                <div className="flex-1">
+                  <div className="flex items-center space-x-3">
+                    <h3 className="font-semibold text-lg">{player.name}</h3>
+                    <span className="text-sm text-muted-foreground">{player.position}</span>
+                    {player.isOnline && (
+                      <span className="w-2 h-2 bg-green-500 rounded-full"></span>
+                    )}
+                  </div>
+                  <p className="text-sm text-muted-foreground">{player.favoritePlayer}</p>
+                </div>
+                
+                {/* Rating */}
+                <div className="text-center">
+                  <div className="flex items-center space-x-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`w-4 h-4 ${
+                          star <= Math.floor(player.rating)
+                            ? 'text-yellow-400 fill-yellow-400'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <div className="text-sm font-semibold">{player.rating.toFixed(1)}</div>
+                  <div className="text-xs text-muted-foreground">({player.totalRatings} match ratings)</div>
+                </div>
+                
+                {/* Match Ratings Only - No Rating Button */}
+              </div>
+            </Card>
           </div>
         ))}
       </div>

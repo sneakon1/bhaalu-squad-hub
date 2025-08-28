@@ -32,12 +32,26 @@ const LiveStreamPlayer = ({ gameId, isStreaming = false, onStreamStart, onStream
 
   useEffect(() => {
     // Setup media server socket
-    const socket = io('http://localhost:5005');
+    const socket = io('http://localhost:5005', {
+      transports: ['polling', 'websocket'],
+      timeout: 20000,
+      forceNew: true
+    });
     
     socket.on('connect', () => {
+      console.log('Connected to media server');
       setMediaSocket(socket);
       const role = isViewer ? 'viewer' : 'broadcaster';
+      console.log('Joining game as:', role, 'gameId:', gameId);
       socket.emit('join-game', { gameId, role });
+    });
+    
+    socket.on('connect_error', (error) => {
+      console.error('Socket connection error:', error);
+    });
+    
+    socket.on('disconnect', (reason) => {
+      console.log('Socket disconnected:', reason);
     });
     
     socket.on('ready-to-stream', () => {
@@ -45,7 +59,9 @@ const LiveStreamPlayer = ({ gameId, isStreaming = false, onStreamStart, onStream
     });
     
     socket.on('stream-available', () => {
+      console.log('Stream available received, isViewer:', isViewer);
       if (isViewer) {
+        console.log('Requesting video updates for gameId:', gameId);
         socket.emit('request-video-updates', gameId);
       }
     });
@@ -53,10 +69,23 @@ const LiveStreamPlayer = ({ gameId, isStreaming = false, onStreamStart, onStream
     socket.on('video-update', (data) => {
       if (isViewer && videoRef.current) {
         const videoUrl = `http://localhost:5005${data.videoUrl}?t=${Date.now()}`;
-        videoRef.current.src = videoUrl;
-        videoRef.current.load();
-        setStream(new MediaStream());
-        setIsPlaying(true);
+        
+        // Create new video element to avoid twitching
+        const newVideo = document.createElement('video');
+        newVideo.src = videoUrl;
+        newVideo.autoplay = true;
+        newVideo.muted = isMuted;
+        newVideo.volume = volume / 100;
+        newVideo.className = videoRef.current.className;
+        
+        newVideo.onloadeddata = () => {
+          if (videoRef.current && videoRef.current.parentNode) {
+            videoRef.current.parentNode.replaceChild(newVideo, videoRef.current);
+            (videoRef as any).current = newVideo;
+            setStream(new MediaStream());
+            setIsPlaying(true);
+          }
+        };
       }
     });
     
@@ -92,18 +121,17 @@ const LiveStreamPlayer = ({ gameId, isStreaming = false, onStreamStart, onStream
         setIsPlaying(true);
       }
       
-      // Setup MediaRecorder to save complete video blobs
+      // Setup MediaRecorder with lower quality for smaller files
       let mimeType = 'video/webm';
-      if (MediaRecorder.isTypeSupported('video/webm;codecs=vp9,opus')) {
-        mimeType = 'video/webm;codecs=vp9,opus';
-      } else if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8,opus')) {
-        mimeType = 'video/webm;codecs=vp8,opus';
-      } else if (MediaRecorder.isTypeSupported('video/webm;codecs=h264,opus')) {
-        mimeType = 'video/webm;codecs=h264,opus';
+      if (MediaRecorder.isTypeSupported('video/webm;codecs=vp8')) {
+        mimeType = 'video/webm;codecs=vp8';
       }
       
       console.log('Using MIME type:', mimeType);
-      const recorder = new MediaRecorder(mediaStream, { mimeType });
+      const recorder = new MediaRecorder(mediaStream, { 
+        mimeType,
+        videoBitsPerSecond: 300000 // 300kbps for small 200ms chunks
+      });
       
       const chunks: Blob[] = [];
       
@@ -116,26 +144,24 @@ const LiveStreamPlayer = ({ gameId, isStreaming = false, onStreamStart, onStream
       
       recorder.onstop = () => {
         console.log('Recorder stopped, chunks:', chunks.length);
-        if (chunks.length > 0) {
+        if (chunks.length > 0 && mediaSocket && mediaSocket.connected) {
           const blob = new Blob(chunks, { type: 'video/webm' });
           console.log('Created blob, size:', blob.size);
           const reader = new FileReader();
           reader.onload = () => {
             const arrayBuffer = reader.result as ArrayBuffer;
             console.log('Sending video data, size:', arrayBuffer.byteLength);
-            if (mediaSocket) {
-              mediaSocket.emit('save-video', {
-                videoData: Array.from(new Uint8Array(arrayBuffer))
-              });
-            }
+            mediaSocket.emit('save-video', {
+              videoData: Array.from(new Uint8Array(arrayBuffer))
+            });
           };
           reader.readAsArrayBuffer(blob);
         } else {
-          console.log('No chunks to save');
+          console.log('No chunks to save or socket disconnected');
         }
       };
       
-      // Save video every 5 seconds
+      // Save video every 500ms for smoother experience
       const saveInterval = setInterval(() => {
         if (recorder.state === 'recording') {
           recorder.stop();
@@ -144,9 +170,9 @@ const LiveStreamPlayer = ({ gameId, isStreaming = false, onStreamStart, onStream
               chunks.length = 0;
               recorder.start();
             }
-          }, 100);
+          }, 50);
         }
-      }, 5000);
+      }, 500);
       
       // Store interval for cleanup
       setMediaRecorder({ recorder, interval: saveInterval } as any);
@@ -162,14 +188,7 @@ const LiveStreamPlayer = ({ gameId, isStreaming = false, onStreamStart, onStream
         body: JSON.stringify({ isStreaming: true, userEmail })
       });
       
-      // Broadcast stream start via WebSocket
-      if (ws) {
-        ws.send(JSON.stringify({
-          type: 'stream_update',
-          gameId,
-          isStreaming: true
-        }));
-      }
+      // Stream updates handled by media server
       
       onStreamStart?.();
     } catch (err) {
@@ -213,14 +232,7 @@ const LiveStreamPlayer = ({ gameId, isStreaming = false, onStreamStart, onStream
       body: JSON.stringify({ isStreaming: false, userEmail })
     });
     
-    // Broadcast stream stop via WebSocket
-    if (ws) {
-      ws.send(JSON.stringify({
-        type: 'stream_update',
-        gameId,
-        isStreaming: false
-      }));
-    }
+    // Stream updates handled by media server
     
     setIsPlaying(false);
     onStreamStop?.();

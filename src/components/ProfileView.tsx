@@ -72,10 +72,26 @@ const ProfileView = () => {
       setFetchError('No user email found. Please log in.');
       return;
     }
-    fetch(`http://localhost:5000/api/profile/${userEmail}`)
-      .then(res => res.json())
-      .then(data => {
-        if (data && !data.message) {
+    
+    const fetchProfileWithRatings = async () => {
+      try {
+        const token = localStorage.getItem('authToken');
+        const profileRes = await fetch('http://localhost:5000/api/profile/me', {
+          headers: token ? { Authorization: `Bearer ${token}` } : {}
+        });
+        const data = await profileRes.json();
+        
+        if (data && data.email) {
+          // Fetch ratings and stats from games
+          const ratingsRes = await fetch(`http://localhost:5000/games/player-ratings/${userEmail}`);
+          const ratingsData = await ratingsRes.json();
+          console.log('Ratings data:', ratingsData);
+          
+          const statsRes = await fetch(`http://localhost:5000/games/player-stats/${userEmail}`);
+          const statsData = await statsRes.json();
+          console.log('Stats data:', statsData);
+          console.log('User email for stats:', userEmail);
+          
           const fetchedProfile = {
             name: data.name,
             email: data.email,
@@ -85,11 +101,12 @@ const ProfileView = () => {
             bio: data.aboutMe || '',
             profilePicture: data.profilePicture || '',
             availableThisWeek: data.availableThisWeek || false,
-            rating: data.rating || 0,
-            gamesPlayed: data.gamesPlayed || 0,
-            goals: data.goals || 0,
-            assists: data.assists || 0,
+            rating: ratingsData.averageRating || 0,
+            gamesPlayed: statsData.gamesPlayed || 0,
+            goals: statsData.goals || 0,
+            assists: statsData.assists || 0,
           };
+          console.log('Final profile with stats:', fetchedProfile);
           setProfile(fetchedProfile);
           
           // Check if there's a saved draft
@@ -125,10 +142,12 @@ const ProfileView = () => {
           }
           setIsEditing(true);
         }
-      })
-      .catch(() => {
+      } catch (err) {
         setFetchError('Failed to fetch profile. Please try again.');
-      });
+      }
+    };
+    
+    fetchProfileWithRatings();
   }, [userEmail]);
 
 
@@ -155,13 +174,16 @@ const ProfileView = () => {
   const handleSave = async () => {
     if (!editProfile) return;
     try {
+      const token = localStorage.getItem('authToken');
       const method = profile ? 'PUT' : 'POST';
-      const url = profile
-        ? `http://localhost:5000/api/profile/${editProfile.email}`
-        : 'http://localhost:5000/api/profile';
+      const url = profile ? `http://localhost:5000/api/profile/${profile.email}` : 'http://localhost:5000/api/profile';
+      const headers = {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      };
       const res = await fetch(url, {
         method,
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           name: editProfile.name,
           email: editProfile.email,
@@ -284,16 +306,16 @@ const ProfileView = () => {
                 </Badge>
               </div>
 
-              {/* Rating */}
+              {/* Rating - LOCKED */}
               <div className="flex items-center justify-center space-x-2">
                 <div className="flex space-x-1">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <Star
                       key={star}
                       className={`w-5 h-5 ${
-                        star <= Math.floor(editProfile.rating)
+                        star <= Math.floor(profile?.rating || 0)
                           ? 'text-yellow-400 fill-yellow-400'
-                          : star === Math.ceil(editProfile.rating)
+                          : star === Math.ceil(profile?.rating || 0)
                           ? 'text-yellow-400 fill-yellow-400 opacity-50'
                           : 'text-gray-300'
                       }`}
@@ -301,7 +323,7 @@ const ProfileView = () => {
                   ))}
                 </div>
                 <span className="text-lg font-semibold text-foreground">
-                  {editProfile.rating.toFixed(1)}
+                  {(profile?.rating || 0).toFixed(1)}
                 </span>
               </div>
 
@@ -324,21 +346,21 @@ const ProfileView = () => {
             </div>
           </Card>
 
-          {/* Stats Card */}
+          {/* Stats Card - LOCKED */}
           <Card className="card-field p-6 mt-6">
-            <h3 className="text-lg font-poppins font-semibold mb-4">Career Stats</h3>
+            <h3 className="text-lg font-poppins font-semibold mb-4">Career Stats (Read Only)</h3>
             <div className="space-y-4">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Games Played</span>
-                <span className="font-semibold">{editProfile.gamesPlayed}</span>
+                <span className="font-semibold">{profile?.gamesPlayed || 0}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Goals</span>
-                <span className="font-semibold">{editProfile.goals}</span>
+                <span className="font-semibold">{profile?.goals || 0}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Assists</span>
-                <span className="font-semibold">{editProfile.assists}</span>
+                <span className="font-semibold">{profile?.assists || 0}</span>
               </div>
             </div>
           </Card>
@@ -382,18 +404,18 @@ const ProfileView = () => {
                 />
               </div>
 
-              {/* Email */}
+              {/* Email - LOCKED */}
               <div className="space-y-2">
                 <Label htmlFor="email" className="flex items-center space-x-2">
                   <Mail className="w-4 h-4" />
-                  <span>Email</span>
+                  <span>Email (Read Only)</span>
                 </Label>
                 <Input
                   id="email"
                   type="email"
-                  value={isEditing ? editProfile.email : profile?.email || ''}
-                  onChange={(e) => handleInputChange('email', e.target.value)}
-                  disabled={!isEditing}
+                  value={profile?.email || ''}
+                  disabled={true}
+                  className="bg-muted"
                 />
               </div>
 

@@ -32,6 +32,12 @@ const gameSchema = new mongoose.Schema({
     scorer: { type: String, required: true }, // player name
     minute: { type: Number, default: 0 },
     timestamp: { type: Date, default: Date.now }
+  }],
+  playerRatings: [{
+    playerEmail: { type: String, required: true },
+    rating: { type: Number, required: true, min: 1, max: 5 },
+    ratedBy: { type: String, required: true },
+    ratedAt: { type: Date, default: Date.now }
   }]
 });
 

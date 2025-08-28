@@ -456,18 +456,23 @@ const Dashboard = () => {
                 </div>
 
                 {/* Players Status */}
-                <div className="flex items-center justify-between bg-muted/30 rounded-lg p-3">
-                  <div className="flex items-center space-x-2">
-                    <Users className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-medium">
-                      {game.playersIn}/{game.maxPlayers} Players In
-                    </span>
+                <div className="bg-muted/30 rounded-lg p-3 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Users className="w-4 h-4 text-primary" />
+                      <span className="text-sm font-medium">
+                        {game.playersIn}/{game.maxPlayers} Players In
+                      </span>
+                    </div>
+                    <div className="w-16 bg-border rounded-full h-2">
+                      <div 
+                        className="bg-primary h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${(game.playersIn / game.maxPlayers) * 100}%` }}
+                      ></div>
+                    </div>
                   </div>
-                  <div className="w-16 bg-border rounded-full h-2">
-                    <div 
-                      className="bg-primary h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${(game.playersIn / game.maxPlayers) * 100}%` }}
-                    ></div>
+                  <div className="text-xs text-muted-foreground">
+                    Click to see who's playing →
                   </div>
                 </div>
 

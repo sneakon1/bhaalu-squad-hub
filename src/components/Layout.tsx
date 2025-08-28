@@ -28,6 +28,8 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
   const handleLogout = () => {
     localStorage.removeItem('userName');
     localStorage.removeItem('userEmail');
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('isAdmin');
     window.location.reload();
   };
 

@@ -25,7 +25,7 @@ export const WebSocketProvider = ({ children }: WebSocketProviderProps) => {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    const ws = new WebSocket('ws://localhost:5001');
+    const ws = new WebSocket('ws://localhost:5005');
     
     ws.onopen = () => {
       setIsConnected(true);

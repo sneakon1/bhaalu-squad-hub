@@ -146,25 +146,7 @@ const LiveMatchCard = ({ game }: LiveMatchCardProps) => {
         </div>
       </div>
 
-      {/* Match Events */}
-      <div>
-        <h3 className="font-semibold text-foreground mb-3 flex items-center space-x-2">
-          <Activity className="w-4 h-4" />
-          <span>Match Events</span>
-        </h3>
-        <div className="space-y-2 max-h-32 overflow-y-auto">
-          {events.map((event) => (
-            <div key={event.id} className="flex items-start space-x-3 text-sm">
-              <span className="text-muted-foreground font-mono">{event.time}</span>
-              <span className="text-lg">{getEventIcon(event.type)}</span>
-              <div>
-                <div className="font-medium">{event.player}</div>
-                <div className="text-muted-foreground text-xs">{event.description}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
+
     </Card>
   );
 };

@@ -6,7 +6,6 @@ const verifyToken = require('./middleware/verifyToken'); // JWT middleware
 // GET all profiles (for PlayersView)
 router.get('/', verifyToken, async (req, res) => {
   try {
-    // Fetch all profiles, only include necessary fields
     const profiles = await Profile.find({}, 
       'name preferredPosition favPlayer availableThisWeek profilePicture rating totalRatings email'
     );
@@ -15,6 +14,20 @@ router.get('/', verifyToken, async (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: 'Server error while fetching profiles.' });
+  }
+});
+
+// GET current user's profile
+router.get('/me', verifyToken, async (req, res) => {
+  try {
+    const profile = await Profile.findOne({ email: req.user.email });
+    if (!profile) {
+      return res.status(404).json({ message: 'Profile not found.' });
+    }
+    res.json(profile);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: 'Server error while fetching profile.' });
   }
 });
 

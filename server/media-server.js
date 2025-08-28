@@ -10,7 +10,9 @@ const io = socketIo(server, {
   cors: {
     origin: "*",
     methods: ["GET", "POST"]
-  }
+  },
+  transports: ['polling', 'websocket'],
+  allowEIO3: true
 });
 
 // Create recordings directory
@@ -20,6 +22,7 @@ if (!fs.existsSync(recordingsDir)) {
 }
 
 const gameStreams = new Map(); // gameId -> { broadcaster: socketId, viewers: Set<socketId>, recording: WriteStream, recordingPath: string }
+const captainRooms = new Map(); // gameId -> { captain1: socketId, captain2: socketId, messages: [], currentTurn: 'captain1' | 'captain2' }
 
 // Serve video files
 app.use('/recordings', express.static(recordingsDir));
@@ -29,6 +32,7 @@ io.on('connection', (socket) => {
 
   socket.on('join-game', (data) => {
     const { gameId, role } = data;
+    console.log('Join game:', { gameId, role, socketId: socket.id });
     socket.gameId = gameId;
     socket.role = role;
     
@@ -45,11 +49,16 @@ io.on('connection', (socket) => {
       // Set recording path
       const recordingPath = path.join(recordingsDir, `${gameId}-${Date.now()}.webm`);
       stream.recordingPath = recordingPath;
+      console.log('Broadcaster setup, recording path:', recordingPath);
       
     } else {
       stream.viewers.add(socket.id);
+      console.log('Viewer added, total viewers:', stream.viewers.size);
       if (stream.broadcaster) {
+        console.log('Broadcaster exists, sending stream-available');
         socket.emit('stream-available');
+      } else {
+        console.log('No broadcaster yet');
       }
     }
   });
@@ -85,8 +94,9 @@ io.on('connection', (socket) => {
     }
   });
 
-  // Send video file updates every 5 seconds
+  // Send video file updates every 500ms for smooth viewing
   socket.on('request-video-updates', (gameId) => {
+    console.log('Video updates requested for gameId:', gameId);
     const interval = setInterval(() => {
       const stream = gameStreams.get(gameId);
       if (stream && stream.recordingPath) {
@@ -98,7 +108,7 @@ io.on('connection', (socket) => {
       } else {
         clearInterval(interval);
       }
-    }, 5000);
+    }, 500);
     
     socket.videoUpdateInterval = interval;
   });
@@ -124,10 +134,142 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Captain team selection events
+  socket.on('join-captain-room', (data) => {
+    const { gameId, userEmail } = data;
+    console.log('Join captain room:', { gameId, userEmail, socketId: socket.id });
+    socket.gameId = gameId;
+    socket.userEmail = userEmail;
+    
+    if (!captainRooms.has(gameId)) {
+      captainRooms.set(gameId, { captain1: null, captain2: null, messages: [], currentTurn: 'captain1' });
+    }
+    
+    const room = captainRooms.get(gameId);
+    console.log('Room state:', room);
+    
+    if (!room.captain1) {
+      room.captain1 = socket.id;
+      console.log('Assigned captain1 to:', socket.id);
+      socket.emit('captain-assigned', { role: 'captain1' });
+    } else if (!room.captain2) {
+      room.captain2 = socket.id;
+      console.log('Assigned captain2 to:', socket.id);
+      socket.emit('captain-assigned', { role: 'captain2' });
+      
+      // Both captains now assigned, notify both
+      [room.captain1, room.captain2].forEach(captainId => {
+        const captainSocket = io.sockets.sockets.get(captainId);
+        if (captainSocket) {
+          captainSocket.emit('both-captains-ready');
+        }
+      });
+    } else {
+      console.log('Both captain slots filled');
+    }
+  });
+
+  socket.on('request-captain', (data) => {
+    const { gameId, userEmail } = data;
+    console.log('Captain request:', { gameId, userEmail, socketId: socket.id });
+    const room = captainRooms.get(gameId);
+    
+    if (room) {
+      console.log('Room found:', room);
+      if (!room.captain1) {
+        room.captain1 = socket.id;
+        console.log('Assigned captain1 via request to:', socket.id);
+        socket.emit('captain-assigned', { role: 'captain1' });
+      } else if (!room.captain2) {
+        room.captain2 = socket.id;
+        console.log('Assigned captain2 via request to:', socket.id);
+        socket.emit('captain-assigned', { role: 'captain2' });
+        
+        // Both captains now assigned, notify both
+        [room.captain1, room.captain2].forEach(captainId => {
+          const captainSocket = io.sockets.sockets.get(captainId);
+          if (captainSocket) {
+            captainSocket.emit('both-captains-ready');
+          }
+        });
+      } else {
+        console.log('Both captain slots already filled');
+      }
+    } else {
+      console.log('No room found for gameId:', gameId);
+    }
+  });
+
+  socket.on('coin-toss', (data) => {
+    const { gameId } = data;
+    const room = captainRooms.get(gameId);
+    
+    if (room) {
+      const winner = Math.random() < 0.5 ? 'captain1' : 'captain2';
+      room.currentTurn = winner;
+      
+      [room.captain1, room.captain2].forEach(captainId => {
+        const captainSocket = io.sockets.sockets.get(captainId);
+        if (captainSocket) {
+          captainSocket.emit('toss-result', { winner });
+        }
+      });
+    }
+  });
+
+  socket.on('select-player', (data) => {
+    const { gameId, playerId, team, captain } = data;
+    const room = captainRooms.get(gameId);
+    
+    if (room && room.currentTurn === captain) {
+      const nextTurn = captain === 'captain1' ? 'captain2' : 'captain1';
+      room.currentTurn = nextTurn;
+      
+      [room.captain1, room.captain2].forEach(captainId => {
+        const captainSocket = io.sockets.sockets.get(captainId);
+        if (captainSocket) {
+          captainSocket.emit('player-selected', { playerId, team, nextTurn });
+        }
+      });
+      
+      // Check if this was the last player (emit completion if needed)
+      // This will be handled on the client side
+    }
+  });
+
+  socket.on('captain-message', (data) => {
+    const { gameId, sender, message } = data;
+    const room = captainRooms.get(gameId);
+    
+    if (room) {
+      room.messages.push({ sender, message, timestamp: new Date() });
+      
+      [room.captain1, room.captain2].forEach(captainId => {
+        const captainSocket = io.sockets.sockets.get(captainId);
+        if (captainSocket && captainSocket.id !== socket.id) {
+          captainSocket.emit('captain-message', { sender, message });
+        }
+      });
+    }
+  });
+
   socket.on('disconnect', () => {
     if (socket.videoUpdateInterval) {
       clearInterval(socket.videoUpdateInterval);
     }
+    
+    // Handle captain disconnection
+    captainRooms.forEach((room, gameId) => {
+      if (room.captain1 === socket.id) {
+        room.captain1 = null;
+      } else if (room.captain2 === socket.id) {
+        room.captain2 = null;
+      }
+      
+      if (!room.captain1 && !room.captain2) {
+        captainRooms.delete(gameId);
+      }
+    });
     
     if (socket.gameId) {
       const stream = gameStreams.get(socket.gameId);
