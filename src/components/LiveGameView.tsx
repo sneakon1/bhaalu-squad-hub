@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { X, ArrowLeft, Plus, Target, Square, Lock, Mail, Star } from 'lucide-react';
+import { io } from 'socket.io-client';
 import { Dialog, DialogContent, DialogOverlay, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -62,6 +63,18 @@ const LiveGameView = ({ game, isOpen, onClose, onGameUpdate }: LiveGameViewProps
       fetchGameData();
       checkAdminStatus();
       fetchCurrentUserName();
+      
+      // Setup socket for match end notifications
+      const socket = io('http://localhost:5005');
+      socket.emit('join-game-room', { gameId: game.id });
+      
+      socket.on('match-ended', () => {
+        setShowRatingDialog(true);
+      });
+      
+      return () => {
+        socket.disconnect();
+      };
     }
   }, [game, isOpen]);
 
@@ -200,7 +213,15 @@ const LiveGameView = ({ game, isOpen, onClose, onGameUpdate }: LiveGameViewProps
         onGameUpdate?.(); // Notify parent to refresh
         setMatchEnded(true);
         
-        // Show rating dialog after match ends
+        // Broadcast match end via socket (exclude current user)
+        const socket = io('http://localhost:5000');
+        const userEmail = localStorage.getItem('userEmail');
+        socket.on('connect', () => {
+          socket.emit('broadcast-match-end', { gameId: game?.id, excludeUser: userEmail });
+          socket.disconnect();
+        });
+        
+        // Show rating dialog for admin immediately
         setTimeout(() => {
           setShowRatingDialog(true);
         }, 1000);

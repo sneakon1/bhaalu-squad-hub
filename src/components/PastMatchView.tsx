@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { X, Play, BarChart3, Users, Target, ArrowLeft, Clock, MapPin } from 'lucide-react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -24,6 +24,25 @@ interface PastMatchViewProps {
 
 const PastMatchView = ({ match, isOpen, onClose }: PastMatchViewProps) => {
   const [activeTab, setActiveTab] = useState('highlights');
+  const [gameData, setGameData] = useState<any>(null);
+
+  useEffect(() => {
+    if (match && isOpen) {
+      fetchGameData();
+    }
+  }, [match, isOpen]);
+
+  const fetchGameData = async () => {
+    try {
+      const res = await fetch(`http://localhost:5000/games/${match.id}`);
+      const data = await res.json();
+      if (res.ok) {
+        setGameData(data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch game data:', err);
+    }
+  };
 
   if (!match) return null;
 
@@ -94,7 +113,7 @@ const PastMatchView = ({ match, isOpen, onClose }: PastMatchViewProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-6xl w-full h-[90vh] p-0">
+      <DialogContent className="max-w-6xl w-full max-h-[90vh] p-0 overflow-hidden">
         <div className="flex flex-col h-full">
           {/* Header */}
           <div className="flex items-center justify-between p-6 border-b">
@@ -168,13 +187,12 @@ const PastMatchView = ({ match, isOpen, onClose }: PastMatchViewProps) => {
           {/* Content Tabs */}
           <div className="flex-1 overflow-hidden">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-              <TabsList className="grid w-full grid-cols-3 mx-6 mt-4">
+              <TabsList className="grid w-full grid-cols-2 mx-6 mt-4">
                 <TabsTrigger value="highlights">Highlights</TabsTrigger>
-                <TabsTrigger value="stats">Statistics</TabsTrigger>
                 <TabsTrigger value="players">Players</TabsTrigger>
               </TabsList>
 
-              <div className="flex-1 overflow-y-auto p-6">
+              <div className="flex-1 overflow-y-auto p-6 min-h-0">
                 <TabsContent value="highlights" className="space-y-6 mt-0">
                   {/* Video Player Placeholder */}
                   <Card className="p-6">
@@ -215,76 +233,50 @@ const PastMatchView = ({ match, isOpen, onClose }: PastMatchViewProps) => {
                   </Card>
                 </TabsContent>
 
-                <TabsContent value="stats" className="space-y-6 mt-0">
-                  <div className="grid gap-6 md:grid-cols-2">
-                    {Object.entries(stats).map(([key, value]) => (
-                      <Card key={key} className="p-6">
-                        <h3 className="text-lg font-semibold mb-4 capitalize">
-                          {key.replace(/([A-Z])/g, ' $1').trim()}
-                        </h3>
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm">{match.homeTeam}</span>
-                            <span className="font-bold">{value.home}</span>
-                          </div>
-                          <div className="flex space-x-2">
-                            <div 
-                              className="bg-primary h-2 rounded-full"
-                              style={{ width: `${(value.home / (value.home + value.away)) * 100}%` }}
-                            />
-                            <div 
-                              className="bg-secondary h-2 rounded-full"
-                              style={{ width: `${(value.away / (value.home + value.away)) * 100}%` }}
-                            />
-                          </div>
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm">{match.awayTeam}</span>
-                            <span className="font-bold">{value.away}</span>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </TabsContent>
+
 
                 <TabsContent value="players" className="space-y-6 mt-0">
-                  <div className="grid gap-6 md:grid-cols-2">
-                    <Card className="p-6">
-                      <h3 className="text-lg font-semibold mb-4">{match.homeTeam}</h3>
-                      <div className="space-y-3">
-                        {players.home.map((player, index) => (
-                          <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                            <div>
-                              <div className="font-medium">{player.name}</div>
-                              <div className="text-sm text-muted-foreground">{player.position}</div>
-                            </div>
-                            <div className="text-right">
-                              <div className="font-bold text-primary">{player.rating}</div>
-                              <div className="text-xs text-muted-foreground">Rating</div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </Card>
+                  {gameData ? (
+                    <div className="grid gap-6 md:grid-cols-2">
+                      <Card className="p-6">
+                        <h3 className="text-lg font-semibold mb-4">{gameData.teams?.teamA?.name || 'Team A'}</h3>
+                        <div className="space-y-3">
+                          {gameData.teams?.teamA?.players?.map((playerName: string, index: number) => {
+                            const goals = gameData.goals?.filter((goal: any) => goal.scorer === playerName).length || 0;
+                            return (
+                              <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                                <div>
+                                  <div className="font-medium">{playerName}</div>
+                                  <div className="text-sm text-muted-foreground">{goals} goals</div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </Card>
 
-                    <Card className="p-6">
-                      <h3 className="text-lg font-semibold mb-4">{match.awayTeam}</h3>
-                      <div className="space-y-3">
-                        {players.away.map((player, index) => (
-                          <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                            <div>
-                              <div className="font-medium">{player.name}</div>
-                              <div className="text-sm text-muted-foreground">{player.position}</div>
-                            </div>
-                            <div className="text-right">
-                              <div className="font-bold text-secondary">{player.rating}</div>
-                              <div className="text-xs text-muted-foreground">Rating</div>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </Card>
-                  </div>
+                      <Card className="p-6">
+                        <h3 className="text-lg font-semibold mb-4">{gameData.teams?.teamB?.name || 'Team B'}</h3>
+                        <div className="space-y-3">
+                          {gameData.teams?.teamB?.players?.map((playerName: string, index: number) => {
+                            const goals = gameData.goals?.filter((goal: any) => goal.scorer === playerName).length || 0;
+                            return (
+                              <div key={index} className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+                                <div>
+                                  <div className="font-medium">{playerName}</div>
+                                  <div className="text-sm text-muted-foreground">{goals} goals</div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </Card>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      Loading player data...
+                    </div>
+                  )}
                 </TabsContent>
               </div>
             </Tabs>

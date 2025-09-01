@@ -23,6 +23,7 @@ if (!fs.existsSync(recordingsDir)) {
 
 const gameStreams = new Map(); // gameId -> { broadcaster: socketId, viewers: Set<socketId>, recording: WriteStream, recordingPath: string }
 const captainRooms = new Map(); // gameId -> { captain1: socketId, captain2: socketId, messages: [], currentTurn: 'captain1' | 'captain2' }
+const gameRooms = new Map(); // gameId -> Set<socketId> for match notifications
 
 // Serve video files
 app.use('/recordings', express.static(recordingsDir));
@@ -253,6 +254,22 @@ io.on('connection', (socket) => {
     }
   });
 
+  // Global room for all users to receive match notifications
+  socket.on('join-global-room', (data) => {
+    const { userEmail } = data;
+    socket.join('global-notifications');
+    console.log(`User ${userEmail} joined global notifications room`);
+  });
+
+  socket.on('broadcast-match-end', (data) => {
+    const { gameId } = data;
+    console.log(`Broadcasting match end for game ${gameId} to all users`);
+    
+    // Broadcast to all users in global room
+    io.to('global-notifications').emit('match-ended', { gameId });
+    console.log(`Match end broadcasted globally for game ${gameId}`);
+  });
+
   socket.on('disconnect', () => {
     if (socket.videoUpdateInterval) {
       clearInterval(socket.videoUpdateInterval);
@@ -268,6 +285,14 @@ io.on('connection', (socket) => {
       
       if (!room.captain1 && !room.captain2) {
         captainRooms.delete(gameId);
+      }
+    });
+    
+    // Handle game room disconnection
+    gameRooms.forEach((room, gameId) => {
+      room.delete(socket.id);
+      if (room.size === 0) {
+        gameRooms.delete(gameId);
       }
     });
     

@@ -334,4 +334,50 @@ router.get('/player-stats/:email', async (req, res) => {
   }
 });
 
+// Notify match end
+router.post('/:id/notify-match-end', async (req, res) => {
+  try {
+    const game = await Game.findById(req.params.id);
+    if (!game) {
+      return res.status(404).json({ message: 'Game not found.' });
+    }
+    
+    // Mark game as needing ratings
+    game.needsRating = true;
+    game.ratingNotifiedAt = new Date();
+    await game.save();
+    
+    res.json({ message: 'Match end notification sent' });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
+// Check if user needs to rate players
+router.get('/check-rating-needed/:email', async (req, res) => {
+  try {
+    const game = await Game.findOne({
+      needsRating: true,
+      $or: [
+        { 'teams.teamA.players': req.params.email },
+        { 'teams.teamB.players': req.params.email },
+        { 'players.email': req.params.email }
+      ],
+      ratingNotifiedAt: { $gte: new Date(Date.now() - 60000) } // Within last minute
+    });
+    
+    if (game) {
+      // Check if user already rated
+      const hasRated = game.playerRatings.some(rating => rating.ratedBy === req.params.email);
+      if (!hasRated) {
+        return res.json({ needsRating: true, gameId: game._id });
+      }
+    }
+    
+    res.json({ needsRating: false });
+  } catch (err) {
+    res.status(500).json({ message: 'Server error.' });
+  }
+});
+
 module.exports = router;

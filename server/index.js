@@ -1,4 +1,6 @@
 const express = require('express');
+const http = require('http');
+const socketIo = require('socket.io');
 const bodyParser = require('body-parser');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -8,11 +10,41 @@ const gamesRoutes = require('./games.routes');
 const profileRoutes = require('./profile.routes');
 
 const app = express();
+const server = http.createServer(app);
+const io = socketIo(server, {
+  cors: {
+    origin: "*",
+    methods: ["GET", "POST"]
+  }
+});
 const PORT = 5000;
 const JWT_SECRET = 'your_jwt_secret'; // Change this in production
 
 app.use(bodyParser.json());
 app.use(cors());
+
+// Socket.io connection handling
+io.on('connection', (socket) => {
+  console.log('User connected:', socket.id);
+  
+  socket.on('join-global', (data) => {
+    const { userEmail } = data;
+    socket.join('global-room');
+    console.log(`User ${userEmail} joined global room`);
+  });
+  
+  socket.on('broadcast-match-end', (data) => {
+    const { gameId, excludeUser } = data;
+    console.log(`Broadcasting match end for game ${gameId}, excluding ${excludeUser}`);
+    
+    // Broadcast to all users in global room except the one who ended the match
+    socket.to('global-room').emit('match-ended', { gameId, excludeUser });
+  });
+  
+  socket.on('disconnect', () => {
+    console.log('User disconnected:', socket.id);
+  });
+});
 
 // MongoDB connection
 mongoose.connect('mongodb://localhost:27017/bhaalu-squad-hub', {
@@ -84,6 +116,6 @@ app.post('/api/login', async (req, res) => {
 app.use('/games', gamesRoutes);
 app.use('/api/profile', profileRoutes);
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
 });
