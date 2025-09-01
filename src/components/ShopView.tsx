@@ -1,23 +1,25 @@
 import { useState } from 'react';
 import ProductCard from './ProductCard';
+import blueJersey from '@/assets/bhaaluSquadBlue.jpg';
+import redJersey from '@/assets/bhaaluSquadRed.jpg';
 import ProductDetails from './ProductDetails';
 
 const products = [
   {
     id: '1',
     name: 'Bhaalu Squad Blue Jersey',
-    price: 49.99,
-    image: '/placeholder.svg',
-    description: 'Official Bhaalu Squad home jersey in classic blue. Made with premium moisture-wicking fabric.',
+    price: 899,
+    image: blueJersey, // ✅ use imported image
+    description: 'Official Bhaalu Squad blue jersey. Made with premium moisture-wicking fabric.',
     sizes: ['S', 'M', 'L', 'XL', 'XXL'],
     color: 'Blue'
   },
   {
     id: '2',
     name: 'Bhaalu Squad Red Jersey',
-    price: 49.99,
-    image: '/placeholder.svg',
-    description: 'Official Bhaalu Squad away jersey in bold red. Made with premium moisture-wicking fabric.',
+    price: 899,
+    image: redJersey, // ✅ use imported image
+    description: 'Official Bhaalu Squad red jersey. Made with premium moisture-wicking fabric.',
     sizes: ['S', 'M', 'L', 'XL', 'XXL'],
     color: 'Red'
   }

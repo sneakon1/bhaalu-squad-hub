@@ -19,13 +19,17 @@ const ProductCard = ({ product, onViewDetails }) => {
         onClick={onViewDetails}
       >
         <CardContent className="p-0">
-          <div className="aspect-square bg-muted rounded-t-lg flex items-center justify-center">
-            <div className="text-6xl opacity-50">👕</div>
+          <div className="aspect-square bg-muted rounded-t-lg flex items-center justify-center overflow-hidden">
+            <img 
+              src={product.image} 
+              alt={product.name} 
+              className="object-contain w-full h-full"
+            />
           </div>
           <div className="p-6">
             <h3 className="text-xl font-semibold text-foreground mb-2">{product.name}</h3>
             <p className="text-muted-foreground mb-4">{product.description}</p>
-            <div className="text-2xl font-bold text-primary">${product.price}</div>
+            <div className="text-2xl font-bold text-primary">₹{product.price}</div>
           </div>
         </CardContent>
         <CardFooter className="p-6 pt-0">

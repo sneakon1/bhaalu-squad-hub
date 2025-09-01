@@ -13,10 +13,9 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const navigation = [
-    { id: 'dashboard', name: 'Dashboard', icon: Trophy },
+    { id: 'dashboard', name: 'Dashboard', icon: Shield },
     { id: 'players', name: 'Players', icon: Users },
     { id: 'shop', name: 'Shop', icon: ShoppingBag },
-    { id: 'captain', name: 'Captain', icon: Shield },
     { id: 'admin', name: 'Admin', icon: Settings },
     { id: 'profile', name: 'Profile', icon: User },
   ];
@@ -44,8 +43,8 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
               onClick={() => onTabChange('dashboard')}
               className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
             >
-              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary-light rounded-xl flex items-center justify-center">
-                <Trophy className="w-6 h-6 text-primary-foreground" />
+              <div className="w-16 h-16 rounded-xl flex items-center justify-center">
+                <img src="/src/assets/bhaalu_squadIcon.png" alt="Bhaalu Squad" className="w-16 h-16 rounded-xl" />
               </div>
               <div>
                 <h1 className="text-xl font-poppins font-bold text-foreground">Bhaalu Squad</h1>

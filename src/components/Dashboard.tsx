@@ -331,6 +331,9 @@ const Dashboard = () => {
           {/* Content */}
           <div className="relative h-full flex items-center justify-center text-center">
             <div className="animate-fade-in">
+              <div className="mb-6">
+                <img src="/src/assets/bhaalu_squadIcon.png" alt="Bhaalu Squad" className="w-24 h-24 mx-auto rounded-2xl mb-4" />
+              </div>
               <h1 className="text-4xl md:text-5xl font-poppins font-bold text-primary-foreground mb-4">
                 Welcome to Bhaalu Squad
               </h1>
