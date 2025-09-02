@@ -39,7 +39,7 @@ const PlayersView = ({ onTabChange }: PlayersViewProps) => {
       }
       
       try {
-        const res = await fetch('http://localhost:5000/api/profile', {
+        const res = await fetch('https://bhaalu-squad-hub.onrender.com/api/profile', {
           headers: { Authorization: `Bearer ${token}` }
         });
         
@@ -54,7 +54,7 @@ const PlayersView = ({ onTabChange }: PlayersViewProps) => {
           const playersWithRatings = await Promise.all(
             data.map(async (p: any) => {
               try {
-                const ratingRes = await fetch(`http://localhost:5000/games/player-ratings/${encodeURIComponent(p.name)}`);
+                const ratingRes = await fetch(`https://bhaalu-squad-hub.onrender.com/games/player-ratings/${encodeURIComponent(p.name)}`);
                 const ratingData = await ratingRes.json();
                 console.log(`Ratings for ${p.name}:`, ratingData);
                 

@@ -20,7 +20,7 @@ export const GlobalSocketProvider: React.FC<{ children: React.ReactNode }> = ({ 
     const userEmail = localStorage.getItem('userEmail');
     if (!userEmail) return;
 
-    const newSocket = io('http://localhost:5000');
+    const newSocket = io('https://bhaalu-squad-hub.onrender.com');
     
     newSocket.on('connect', () => {
       console.log('Global socket connected');
@@ -76,7 +76,7 @@ const RatingDialog = ({ gameId, onClose }: { gameId: string; onClose: () => void
   
   const fetchGameData = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/games/${gameId}`);
+      const res = await fetch(`https://bhaalu-squad-hub.onrender.com/games/${gameId}`);
       const data = await res.json();
       if (res.ok) {
         setGameData(data);
@@ -90,7 +90,7 @@ const RatingDialog = ({ gameId, onClose }: { gameId: string; onClose: () => void
     const token = localStorage.getItem('authToken');
     if (token) {
       try {
-        const res = await fetch('http://localhost:5000/api/profile/me', {
+        const res = await fetch('https://bhaalu-squad-hub.onrender.com/api/profile/me', {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
@@ -110,7 +110,7 @@ const RatingDialog = ({ gameId, onClose }: { gameId: string; onClose: () => void
   const submitRatings = async () => {
     try {
       const userEmail = localStorage.getItem('userEmail');
-      const res = await fetch(`http://localhost:5000/games/${gameId}/rate-players`, {
+      const res = await fetch(`https://bhaalu-squad-hub.onrender.com/games/${gameId}/rate-players`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ratings: playerRatings, raterEmail: userEmail })

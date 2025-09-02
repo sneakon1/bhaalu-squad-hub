@@ -64,7 +64,7 @@ const GameDetailsView = ({ game, isOpen, onClose }: GameDetailsViewProps) => {
     
     try {
       // Get players who voted "in" for this game
-      const gameRes = await fetch(`http://localhost:5000/games/${game.id}/players-in`);
+      const gameRes = await fetch(`https://bhaalu-squad-hub.onrender.com/games/${game.id}/players-in`);
       const gameData = await gameRes.json();
       
       if (!gameRes.ok || !gameData.playersIn || gameData.playersIn.length === 0) {
@@ -74,7 +74,7 @@ const GameDetailsView = ({ game, isOpen, onClose }: GameDetailsViewProps) => {
       
       // Get profile data for players who are "in"
       const token = localStorage.getItem('authToken');
-      const profileRes = await fetch('http://localhost:5000/api/profile', {
+      const profileRes = await fetch('https://bhaalu-squad-hub.onrender.com/api/profile', {
         headers: token ? { Authorization: `Bearer ${token}` } : {}
       });
       const profileData = await profileRes.json();
@@ -152,7 +152,7 @@ const GameDetailsView = ({ game, isOpen, onClose }: GameDetailsViewProps) => {
         }
       };
 
-      const res = await fetch(`http://localhost:5000/games/${game.id}/go-live-with-teams`, {
+      const res = await fetch(`https://bhaalu-squad-hub.onrender.com/games/${game.id}/go-live-with-teams`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(teamData)

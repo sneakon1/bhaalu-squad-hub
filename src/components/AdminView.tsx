@@ -45,7 +45,7 @@ const AdminView = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const res = await fetch('http://localhost:5000/games', {
+      const res = await fetch('https://bhaalu-squad-hub.onrender.com/games', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -76,7 +76,7 @@ const AdminView = () => {
 
   const fetchGames = async () => {
     try {
-      const res = await fetch('http://localhost:5000/games/upcoming');
+      const res = await fetch('https://bhaalu-squad-hub.onrender.com/games/upcoming');
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || 'Failed to fetch games');
       setGames(data.map((g: any) => ({

@@ -32,7 +32,7 @@ const LiveStreamPlayer = ({ gameId, isStreaming = false, onStreamStart, onStream
 
   useEffect(() => {
     // Setup media server socket
-    const socket = io('http://localhost:5000', {
+    const socket = io('https://bhaalu-squad-hub.onrender.com', {
       transports: ['polling', 'websocket'],
       timeout: 20000,
       forceNew: true
@@ -68,7 +68,7 @@ const LiveStreamPlayer = ({ gameId, isStreaming = false, onStreamStart, onStream
     
     socket.on('video-update', (data) => {
       if (isViewer && videoRef.current) {
-        const videoUrl = `http://localhost:5000${data.videoUrl}?t=${Date.now()}`;
+        const videoUrl = `https://bhaalu-squad-hub.onrender.com${data.videoUrl}?t=${Date.now()}`;
         
         // Create new video element to avoid twitching
         const newVideo = document.createElement('video');
@@ -182,7 +182,7 @@ const LiveStreamPlayer = ({ gameId, isStreaming = false, onStreamStart, onStream
       
       // Update backend streaming status
       const userEmail = localStorage.getItem('userEmail');
-      await fetch(`http://localhost:5000/games/${gameId}/toggle-stream`, {
+      await fetch(`https://bhaalu-squad-hub.onrender.com/games/${gameId}/toggle-stream`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ isStreaming: true, userEmail })
@@ -226,7 +226,7 @@ const LiveStreamPlayer = ({ gameId, isStreaming = false, onStreamStart, onStream
     
     // Update backend streaming status
     const userEmail = localStorage.getItem('userEmail');
-    await fetch(`http://localhost:5000/games/${gameId}/toggle-stream`, {
+    await fetch(`https://bhaalu-squad-hub.onrender.com/games/${gameId}/toggle-stream`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ isStreaming: false, userEmail })

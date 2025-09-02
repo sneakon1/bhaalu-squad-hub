@@ -34,7 +34,7 @@ const PastMatchView = ({ match, isOpen, onClose }: PastMatchViewProps) => {
 
   const fetchGameData = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/games/${match.id}`);
+      const res = await fetch(`https://bhaalu-squad-hub.onrender.com/games/${match.id}`);
       const data = await res.json();
       if (res.ok) {
         setGameData(data);

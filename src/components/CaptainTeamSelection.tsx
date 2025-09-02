@@ -60,7 +60,7 @@ const CaptainTeamSelection = ({ gameId, availablePlayers, onTeamsUpdate, onGoLiv
     }
     
     // Setup socket connection for captain communication
-    const newSocket = io('http://localhost:5000');
+    const newSocket = io('https://bhaalu-squad-hub.onrender.com');
     
     newSocket.on('connect', () => {
       setSocket(newSocket);

@@ -76,18 +76,18 @@ const ProfileView = () => {
     const fetchProfileWithRatings = async () => {
       try {
         const token = localStorage.getItem('authToken');
-        const profileRes = await fetch('http://localhost:5000/api/profile/me', {
+        const profileRes = await fetch('https://bhaalu-squad-hub.onrender.com/api/profile/me', {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
         const data = await profileRes.json();
         
         if (data && data.email) {
           // Fetch ratings and stats from games
-          const ratingsRes = await fetch(`http://localhost:5000/games/player-ratings/${userEmail}`);
+          const ratingsRes = await fetch(`https://bhaalu-squad-hub.onrender.com/games/player-ratings/${userEmail}`);
           const ratingsData = await ratingsRes.json();
           console.log('Ratings data:', ratingsData);
           
-          const statsRes = await fetch(`http://localhost:5000/games/player-stats/${userEmail}`);
+          const statsRes = await fetch(`https://bhaalu-squad-hub.onrender.com/games/player-stats/${userEmail}`);
           const statsData = await statsRes.json();
           console.log('Stats data:', statsData);
           console.log('User email for stats:', userEmail);
@@ -176,7 +176,7 @@ const ProfileView = () => {
     try {
       const token = localStorage.getItem('authToken');
       const method = profile ? 'PUT' : 'POST';
-      const url = profile ? `http://localhost:5000/api/profile/${profile.email}` : 'http://localhost:5000/api/profile';
+      const url = profile ? `https://bhaalu-squad-hub.onrender.com/api/profile/${profile.email}` : 'https://bhaalu-squad-hub.onrender.com/api/profile';
       const headers = {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {})

@@ -82,7 +82,7 @@ const LiveGameView = ({ game, isOpen, onClose, onGameUpdate }: LiveGameViewProps
     const token = localStorage.getItem('authToken');
     if (token) {
       try {
-        const res = await fetch('http://localhost:5000/api/profile/me', {
+        const res = await fetch('https://bhaalu-squad-hub.onrender.com/api/profile/me', {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
@@ -108,7 +108,7 @@ const LiveGameView = ({ game, isOpen, onClose, onGameUpdate }: LiveGameViewProps
   const fetchGameData = async () => {
     if (!game) return;
     try {
-      const res = await fetch(`http://localhost:5000/games/${game.id}`);
+      const res = await fetch(`https://bhaalu-squad-hub.onrender.com/games/${game.id}`);
       const data = await res.json();
       if (res.ok && data.teams) {
         setGameData(data);
@@ -140,7 +140,7 @@ const LiveGameView = ({ game, isOpen, onClose, onGameUpdate }: LiveGameViewProps
     }
 
     try {
-      const res = await fetch(`http://localhost:5000/games/${game?.id}/goal`, {
+      const res = await fetch(`https://bhaalu-squad-hub.onrender.com/games/${game?.id}/goal`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -199,7 +199,7 @@ const LiveGameView = ({ game, isOpen, onClose, onGameUpdate }: LiveGameViewProps
 
   const handleEndMatch = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/games/${game?.id}/end-match`, {
+      const res = await fetch(`https://bhaalu-squad-hub.onrender.com/games/${game?.id}/end-match`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' }
       });
@@ -214,7 +214,7 @@ const LiveGameView = ({ game, isOpen, onClose, onGameUpdate }: LiveGameViewProps
         setMatchEnded(true);
         
         // Broadcast match end via socket (exclude current user)
-        const socket = io('http://localhost:5000');
+        const socket = io('https://bhaalu-squad-hub.onrender.com');
         const userEmail = localStorage.getItem('userEmail');
         socket.on('connect', () => {
           socket.emit('broadcast-match-end', { gameId: game?.id, excludeUser: userEmail });
@@ -244,7 +244,7 @@ const LiveGameView = ({ game, isOpen, onClose, onGameUpdate }: LiveGameViewProps
   const submitRatings = async () => {
     try {
       const userEmail = localStorage.getItem('userEmail');
-      const res = await fetch(`http://localhost:5000/games/${game?.id}/rate-players`, {
+      const res = await fetch(`https://bhaalu-squad-hub.onrender.com/games/${game?.id}/rate-players`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ratings: playerRatings, raterEmail: userEmail })

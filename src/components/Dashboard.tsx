@@ -3,6 +3,7 @@ import { Calendar, MapPin, Users, Clock, CheckCircle, XCircle, Radio, Trophy, Ta
 import { io } from 'socket.io-client';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { API_BASE_URL } from '@/config/api';
 import LiveGameView from './LiveGameView';
 import PastMatchView from './PastMatchView';
 import GameDetailsView from './GameDetailsView';
@@ -76,7 +77,7 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchGames = async () => {
       try {
-        const res = await fetch('http://localhost:5000/games/upcoming');
+        const res = await fetch(`${API_BASE_URL}/games/upcoming`);
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Failed to fetch games');
         setGames(data
@@ -103,7 +104,7 @@ const Dashboard = () => {
 
     const fetchLiveGames = async () => {
       try {
-        const res = await fetch('http://localhost:5000/games/live');
+        const res = await fetch('https://bhaalu-squad-hub.onrender.com/games/live');
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Failed to fetch live games');
         setLiveGames(data.map((g: any) => ({
@@ -123,7 +124,7 @@ const Dashboard = () => {
 
     const fetchPastMatches = async () => {
       try {
-        const res = await fetch('http://localhost:5000/games/completed');
+        const res = await fetch('https://bhaalu-squad-hub.onrender.com/games/completed');
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Failed to fetch completed games');
         setPastMatches(data.map((g: any) => {
@@ -158,7 +159,7 @@ const Dashboard = () => {
   useEffect(() => {
     const interval = setInterval(async () => {
       try {
-        const res = await fetch(`http://localhost:5000/games/check-rating-needed/${userEmail}`);
+        const res = await fetch(`https://bhaalu-squad-hub.onrender.com/games/check-rating-needed/${userEmail}`);
         const data = await res.json();
         if (res.ok && data.needsRating) {
           setRatingGameId(data.gameId);
@@ -176,7 +177,7 @@ const Dashboard = () => {
     if (!userEmail) return;
     
     try {
-      const res = await fetch(`http://localhost:5000/games/${gameId}/vote`, {
+      const res = await fetch(`https://bhaalu-squad-hub.onrender.com/games/${gameId}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status, email: userEmail })
@@ -216,7 +217,7 @@ const Dashboard = () => {
     // Refresh live games and past matches data
     const fetchLiveGames = async () => {
       try {
-        const res = await fetch('http://localhost:5000/games/live');
+        const res = await fetch('https://bhaalu-squad-hub.onrender.com/games/live');
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Failed to fetch live games');
         setLiveGames(data.map((g: any) => ({
@@ -236,7 +237,7 @@ const Dashboard = () => {
     
     const fetchPastMatches = async () => {
       try {
-        const res = await fetch('http://localhost:5000/games/completed');
+        const res = await fetch('https://bhaalu-squad-hub.onrender.com/games/completed');
         const data = await res.json();
         if (!res.ok) throw new Error(data.message || 'Failed to fetch completed games');
         setPastMatches(data.map((g: any) => {
@@ -700,7 +701,7 @@ const RatingDialog = ({ gameId, onClose }: { gameId: string; onClose: () => void
   
   const fetchGameData = async () => {
     try {
-      const res = await fetch(`http://localhost:5000/games/${gameId}`);
+      const res = await fetch(`https://bhaalu-squad-hub.onrender.com/games/${gameId}`);
       const data = await res.json();
       if (res.ok) {
         setGameData(data);
@@ -714,7 +715,7 @@ const RatingDialog = ({ gameId, onClose }: { gameId: string; onClose: () => void
     const token = localStorage.getItem('authToken');
     if (token) {
       try {
-        const res = await fetch('http://localhost:5000/api/profile/me', {
+        const res = await fetch('https://bhaalu-squad-hub.onrender.com/api/profile/me', {
           headers: { Authorization: `Bearer ${token}` }
         });
         if (res.ok) {
@@ -734,7 +735,7 @@ const RatingDialog = ({ gameId, onClose }: { gameId: string; onClose: () => void
   const submitRatings = async () => {
     try {
       const userEmail = localStorage.getItem('userEmail');
-      const res = await fetch(`http://localhost:5000/games/${gameId}/rate-players`, {
+      const res = await fetch(`https://bhaalu-squad-hub.onrender.com/games/${gameId}/rate-players`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ratings: playerRatings, raterEmail: userEmail })
