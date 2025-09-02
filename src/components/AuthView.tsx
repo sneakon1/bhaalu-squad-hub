@@ -36,7 +36,7 @@ const AuthView = ({ onBack }: AuthViewProps) => {
       : 'https://bhaalu-squad-hub.onrender.com/api/signup';
     const payload = isLogin
       ? { email: formData.email, password: formData.password }
-      : { email: formData.email, password: formData.password };
+      : { name: formData.name, email: formData.email, password: formData.password };
     try {
       const res = await fetch(endpoint, {
         method: 'POST',

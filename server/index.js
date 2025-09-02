@@ -248,9 +248,9 @@ const User = mongoose.model('User', userSchema);
 
 // Signup endpoint
 app.post('/api/signup', async (req, res) => {
-  const { email, password } = req.body;
-  if (!email || !password) {
-    return res.status(400).json({ message: 'Email and password required.' });
+  const { email, password, name } = req.body;
+  if (!email || !password || !name) {
+    return res.status(400).json({ message: 'Email, password, and name required.' });
   }
   try {
     const existingUser = await User.findOne({ email });
@@ -260,6 +260,24 @@ app.post('/api/signup', async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const user = new User({ email, password: hashedPassword });
     await user.save();
+    
+    // Create profile for new user
+    const Profile = require('./models/Profile');
+    const profile = new Profile({
+      email,
+      name,
+      phone: '',
+      position: 'Midfielder',
+      favoritePlayer: '',
+      bio: '',
+      availableThisWeek: true,
+      rating: 0,
+      gamesPlayed: 0,
+      goals: 0,
+      assists: 0
+    });
+    await profile.save();
+    
     const token = jwt.sign({ email }, JWT_SECRET, { expiresIn: '1h' });
     res.json({ token });
   } catch (err) {
