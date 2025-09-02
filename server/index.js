@@ -21,8 +21,8 @@ const io = socketIo(server, {
     methods: ["GET", "POST"]
   }
 });
-const PORT = 5000;
-const JWT_SECRET = 'your_jwt_secret'; // Change this in production
+const PORT = process.env.PORT || 5000;
+const JWT_SECRET = process.env.JWT_SECRET || 'your_jwt_secret';
 
 app.use(bodyParser.json());
 app.use(cors());
@@ -231,6 +231,10 @@ io.on('connection', (socket) => {
 mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
+}).then(() => {
+  console.log('Connected to MongoDB');
+}).catch(err => {
+  console.error('MongoDB connection error:', err);
 });
 
 const userSchema = new mongoose.Schema({
@@ -297,6 +301,7 @@ app.post('/api/login', async (req, res) => {
 app.use('/games', gamesRoutes);
 app.use('/api/profile', profileRoutes);
 
-server.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+const port = process.env.PORT || 5000;
+server.listen(port, '0.0.0.0', () => {
+  console.log(`Server running on port ${port}`);
 });
