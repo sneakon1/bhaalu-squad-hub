@@ -229,6 +229,7 @@ io.on('connection', (socket) => {
 
 // MongoDB connection
 mongoose.connect(process.env.MONGODB_URI, {
+  dbName: "bhaalu-squad-hub",
   useNewUrlParser: true,
   useUnifiedTopology: true,
 }).then(() => {
