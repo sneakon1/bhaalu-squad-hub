@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Trophy, Users, User, Shield, Menu, X, Settings, ShoppingBag, LogIn } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import SimpleThemeToggle from './SimpleThemeToggle';
+import bhaaluSquadIcon from '@/assets/bhaalu_squadIcon.png';
 
 interface LayoutProps {
   children: React.ReactNode;
@@ -44,7 +45,7 @@ const Layout = ({ children, activeTab, onTabChange }: LayoutProps) => {
               className="flex items-center space-x-3 hover:opacity-80 transition-opacity"
             >
               <div className="w-16 h-16 rounded-xl flex items-center justify-center">
-                <img src="/src/assets/bhaalu_squadIcon.png" alt="Bhaalu Squad" className="w-16 h-16 rounded-xl" />
+                <img src={bhaaluSquadIcon} alt="Bhaalu Squad" className="w-16 h-16 rounded-xl" />
               </div>
               <div>
                 <h1 className="text-xl font-poppins font-bold text-foreground">Bhaalu Squad</h1>
