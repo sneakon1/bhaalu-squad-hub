@@ -136,41 +136,39 @@ const LiveStreamPlayer = ({ gameId, isStreaming = false, onStreamStart, onStream
       const chunks: Blob[] = [];
       
       recorder.ondataavailable = (event) => {
-        console.log('Data available, size:', event.data.size);
         if (event.data.size > 0) {
           chunks.push(event.data);
         }
       };
       
       recorder.onstop = () => {
-        console.log('Recorder stopped, chunks:', chunks.length);
         if (chunks.length > 0 && mediaSocket && mediaSocket.connected) {
           const blob = new Blob(chunks, { type: 'video/webm' });
-          console.log('Created blob, size:', blob.size);
           const reader = new FileReader();
           reader.onload = () => {
             const arrayBuffer = reader.result as ArrayBuffer;
-            console.log('Sending video data, size:', arrayBuffer.byteLength);
             mediaSocket.emit('save-video', {
               videoData: Array.from(new Uint8Array(arrayBuffer))
             });
           };
           reader.readAsArrayBuffer(blob);
-        } else {
-          console.log('No chunks to save or socket disconnected');
         }
       };
       
       // Save video every 500ms for smoother experience
       const saveInterval = setInterval(() => {
-        if (recorder.state === 'recording') {
+        if (recorder.state === 'recording' && mediaSocket && mediaSocket.connected) {
           recorder.stop();
           setTimeout(() => {
-            if (mediaStream.active) {
+            if (mediaStream.active && mediaSocket && mediaSocket.connected) {
               chunks.length = 0;
               recorder.start();
+            } else {
+              clearInterval(saveInterval);
             }
           }, 50);
+        } else {
+          clearInterval(saveInterval);
         }
       }, 500);
       
