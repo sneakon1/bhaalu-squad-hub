@@ -177,6 +177,25 @@ const Dashboard = () => {
   const handlePollVote = async (gameId: string, status: 'in' | 'out') => {
     if (!userEmail) return;
 
+    // Check profile completion for "in" votes
+    if (status === 'in') {
+      try {
+        const profileRes = await fetch(`https://bhaalu-squad-hub.onrender.com/api/profile/me`, {
+          headers: { Authorization: `Bearer ${localStorage.getItem('authToken')}` }
+        });
+        
+        if (profileRes.ok) {
+          const profile = await profileRes.json();
+          if (!profile.name || !profile.phone || !profile.position) {
+            alert('Please complete your profile (name, phone, position) before joining matches.');
+            return;
+          }
+        }
+      } catch (err) {
+        console.error('Failed to check profile:', err);
+      }
+    }
+
     try {
       const res = await fetch(`https://bhaalu-squad-hub.onrender.com/games/${gameId}/vote`, {
         method: 'POST',
