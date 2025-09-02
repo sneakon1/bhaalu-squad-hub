@@ -8,6 +8,7 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 const gamesRoutes = require('./games.routes');
 const profileRoutes = require('./profile.routes');
+require('dotenv').config();
 
 const app = express();
 const server = http.createServer(app);
@@ -47,7 +48,7 @@ io.on('connection', (socket) => {
 });
 
 // MongoDB connection
-mongoose.connect('mongodb://localhost:27017/bhaalu-squad-hub', {
+mongoose.connect(process.env.MONGODB_URI, {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 });
