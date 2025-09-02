@@ -12,6 +12,7 @@ import footballSunset from '@/assets/football-sunset.jpg';
 import footballAction from '@/assets/football-action.jpg';
 import footballStadium from '@/assets/football-stadium.jpg';
 import footballTraining from '@/assets/football-training.jpg';
+import bhaaluSquadIcon from '@/assets/bhaalu_squadIcon.png';
 
 interface Game {
   id: string;
@@ -55,14 +56,14 @@ const Dashboard = () => {
   const [isPastMatchOpen, setIsPastMatchOpen] = useState(false);
   const [selectedGame, setSelectedGame] = useState<Game | null>(null);
   const [isGameDetailsOpen, setIsGameDetailsOpen] = useState(false);
-  
+
   const userEmail = localStorage.getItem('userEmail');
-  
+
   useEffect(() => {
     const interval = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % heroImages.length);
     }, 5000);
-    
+
     return () => clearInterval(interval);
   }, [heroImages.length]);
 
@@ -85,7 +86,7 @@ const Dashboard = () => {
           .map((g: any) => {
             const playersIn = g.players ? g.players.filter((p: any) => p.status === 'in').length : 0;
             const userVote = g.players ? g.players.find((p: any) => p.email === userEmail) : null;
-            
+
             return {
               id: g._id,
               title: g.name,
@@ -133,7 +134,7 @@ const Dashboard = () => {
           let result: 'win' | 'loss' | 'draw' = 'draw';
           if (homeScore > awayScore) result = 'win';
           else if (homeScore < awayScore) result = 'loss';
-          
+
           return {
             id: g._id,
             homeTeam: g.teams?.teamA?.name || 'Team A',
@@ -154,7 +155,7 @@ const Dashboard = () => {
     fetchLiveGames();
     fetchPastMatches();
   }, [userEmail]);
-  
+
   // Poll for match end notifications
   useEffect(() => {
     const interval = setInterval(async () => {
@@ -169,26 +170,26 @@ const Dashboard = () => {
         // Ignore polling errors
       }
     }, 2000); // Check every 2 seconds
-    
+
     return () => clearInterval(interval);
   }, [userEmail]);
 
   const handlePollVote = async (gameId: string, status: 'in' | 'out') => {
     if (!userEmail) return;
-    
+
     try {
       const res = await fetch(`https://bhaalu-squad-hub.onrender.com/games/${gameId}/vote`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status, email: userEmail })
       });
-      
+
       const data = await res.json();
       if (res.ok) {
         // Update local state
         setGames(prevGames =>
-          prevGames.map(game => 
-            game.id === gameId 
+          prevGames.map(game =>
+            game.id === gameId
               ? { ...game, userStatus: status, playersIn: data.playersIn }
               : game
           )
@@ -201,10 +202,10 @@ const Dashboard = () => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', { 
-      weekday: 'long', 
-      month: 'short', 
-      day: 'numeric' 
+    return date.toLocaleDateString('en-US', {
+      weekday: 'long',
+      month: 'short',
+      day: 'numeric'
     });
   };
 
@@ -234,7 +235,7 @@ const Dashboard = () => {
         setLiveGames([]);
       }
     };
-    
+
     const fetchPastMatches = async () => {
       try {
         const res = await fetch('https://bhaalu-squad-hub.onrender.com/games/completed');
@@ -246,7 +247,7 @@ const Dashboard = () => {
           let result: 'win' | 'loss' | 'draw' = 'draw';
           if (homeScore > awayScore) result = 'win';
           else if (homeScore < awayScore) result = 'loss';
-          
+
           return {
             id: g._id,
             homeTeam: g.teams?.teamA?.name || 'Team A',
@@ -262,7 +263,7 @@ const Dashboard = () => {
         setPastMatches([]);
       }
     };
-    
+
     fetchLiveGames();
     fetchPastMatches();
   };
@@ -319,21 +320,24 @@ const Dashboard = () => {
           {heroImages.map((image, index) => (
             <div
               key={index}
-              className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ${
-                index === currentImageIndex ? 'opacity-100' : 'opacity-0'
-              }`}
+              className={`absolute inset-0 bg-cover bg-center bg-no-repeat transition-opacity duration-1000 ${index === currentImageIndex ? 'opacity-100' : 'opacity-0'
+                }`}
               style={{ backgroundImage: `url(${image})` }}
             />
           ))}
-          
+
           {/* Overlay */}
           <div className="absolute inset-0 bg-gradient-to-r from-primary/90 to-primary-light/80"></div>
-          
+
           {/* Content */}
           <div className="relative h-full flex items-center justify-center text-center">
             <div className="animate-fade-in">
               <div className="mb-6">
-                <img src="/src/assets/bhaalu_squadIcon.png" alt="Bhaalu Squad" className="w-24 h-24 mx-auto rounded-2xl mb-4" />
+                <img
+                  src={bhaaluSquadIcon}
+                  alt="Bhaalu Squad"
+                  className="w-24 h-24 mx-auto rounded-2xl mb-4"
+                />
               </div>
               <h1 className="text-4xl md:text-5xl font-poppins font-bold text-primary-foreground mb-4">
                 Welcome to Bhaalu Squad
@@ -343,18 +347,17 @@ const Dashboard = () => {
               </p>
             </div>
           </div>
-          
+
           {/* Slide Indicators */}
           <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2">
             {heroImages.map((_, index) => (
               <button
                 key={index}
                 onClick={() => setCurrentImageIndex(index)}
-                className={`w-2 h-2 rounded-full transition-all duration-300 ${
-                  index === currentImageIndex 
-                    ? 'bg-primary-foreground w-6' 
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${index === currentImageIndex
+                    ? 'bg-primary-foreground w-6'
                     : 'bg-primary-foreground/50'
-                }`}
+                  }`}
               />
             ))}
           </div>
@@ -376,9 +379,9 @@ const Dashboard = () => {
 
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3 mb-8">
             {liveGames.map((game) => (
-              <Card 
-                key={game.id} 
-                className="card-field animate-slide-up p-6 cursor-pointer hover:scale-105 transition-transform duration-200" 
+              <Card
+                key={game.id}
+                className="card-field animate-slide-up p-6 cursor-pointer hover:scale-105 transition-transform duration-200"
                 onClick={() => handleLiveGameClick(game)}
               >
                 <div className="space-y-4">
@@ -398,11 +401,11 @@ const Dashboard = () => {
                         <div className="font-semibold text-foreground">{game.homeTeam}</div>
                         <div className="text-xs text-muted-foreground">Home</div>
                       </div>
-                      
+
                       <div className="text-2xl font-bold text-primary px-4">
                         {game.homeScore} - {game.awayScore}
                       </div>
-                      
+
                       <div className="text-left flex-1">
                         <div className="font-semibold text-foreground">{game.awayTeam}</div>
                         <div className="text-xs text-muted-foreground">Away</div>
@@ -417,13 +420,12 @@ const Dashboard = () => {
                       <span>{game.venue}</span>
                     </div>
                     <div className="mt-2">
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        game.status === 'live' 
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${game.status === 'live'
                           ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300'
                           : game.status === 'halftime'
-                          ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
-                          : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300'
-                      }`}>
+                            ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-300'
+                            : 'bg-gray-100 text-gray-700 dark:bg-gray-900/30 dark:text-gray-300'
+                        }`}>
                         {game.status.toUpperCase()}
                       </span>
                     </div>
@@ -453,8 +455,8 @@ const Dashboard = () => {
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {games.map((game) => (
-            <Card 
-              key={game.id} 
+            <Card
+              key={game.id}
               className="card-field animate-slide-up p-6 cursor-pointer hover:scale-105 transition-transform duration-200"
               onClick={() => handleGameClick(game)}
             >
@@ -490,7 +492,7 @@ const Dashboard = () => {
                       </span>
                     </div>
                     <div className="w-16 bg-border rounded-full h-2">
-                      <div 
+                      <div
                         className="bg-primary h-2 rounded-full transition-all duration-300"
                         style={{ width: `${(game.playersIn / game.maxPlayers) * 100}%` }}
                       ></div>
@@ -509,11 +511,10 @@ const Dashboard = () => {
                         e.stopPropagation();
                         handlePollVote(game.id, 'in');
                       }}
-                      className={`flex-1 poll-in ${
-                        game.userStatus === 'in' 
-                          ? 'ring-2 ring-accent ring-offset-2' 
+                      className={`flex-1 poll-in ${game.userStatus === 'in'
+                          ? 'ring-2 ring-accent ring-offset-2'
                           : ''
-                      }`}
+                        }`}
                       size="sm"
                     >
                       <CheckCircle className="w-4 h-4 mr-2" />
@@ -524,11 +525,10 @@ const Dashboard = () => {
                         e.stopPropagation();
                         handlePollVote(game.id, 'out');
                       }}
-                      className={`flex-1 poll-out ${
-                        game.userStatus === 'out' 
-                          ? 'ring-2 ring-destructive ring-offset-2' 
+                      className={`flex-1 poll-out ${game.userStatus === 'out'
+                          ? 'ring-2 ring-destructive ring-offset-2'
                           : ''
-                      }`}
+                        }`}
                       size="sm"
                     >
                       <XCircle className="w-4 h-4 mr-2" />
@@ -543,11 +543,10 @@ const Dashboard = () => {
 
                 {/* Status Indicator */}
                 {game.userStatus && (
-                  <div className={`text-center text-sm font-medium ${
-                    game.userStatus === 'in' 
-                      ? 'text-accent' 
+                  <div className={`text-center text-sm font-medium ${game.userStatus === 'in'
+                      ? 'text-accent'
                       : 'text-destructive'
-                  }`}>
+                    }`}>
                     You've marked yourself as {game.userStatus === 'in' ? 'IN' : 'OUT'}
                   </div>
                 )}
@@ -576,8 +575,8 @@ const Dashboard = () => {
 
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {pastMatches.map((match) => (
-            <Card 
-              key={match.id} 
+            <Card
+              key={match.id}
               className="card-field animate-slide-up p-6 cursor-pointer hover:scale-105 transition-transform duration-200"
               onClick={() => handlePastMatchClick(match)}
             >
@@ -588,9 +587,9 @@ const Dashboard = () => {
                     {match.result.toUpperCase()}
                   </span>
                   <div className="text-sm text-muted-foreground">
-                    {new Date(match.date).toLocaleDateString('en-US', { 
-                      month: 'short', 
-                      day: 'numeric' 
+                    {new Date(match.date).toLocaleDateString('en-US', {
+                      month: 'short',
+                      day: 'numeric'
                     })}
                   </div>
                 </div>
@@ -602,11 +601,11 @@ const Dashboard = () => {
                       <div className="font-semibold text-foreground">{match.homeTeam}</div>
                       <div className="text-xs text-muted-foreground">Home</div>
                     </div>
-                    
+
                     <div className={`text-2xl font-bold px-4 ${getResultColor(match.result)}`}>
                       {match.homeScore} - {match.awayScore}
                     </div>
-                    
+
                     <div className="text-left flex-1">
                       <div className="font-semibold text-foreground">{match.awayTeam}</div>
                       <div className="text-xs text-muted-foreground">Away</div>
@@ -673,10 +672,10 @@ const Dashboard = () => {
         isOpen={isGameDetailsOpen}
         onClose={handleGameDetailsClose}
       />
-      
+
       {/* Global Rating Dialog */}
       {showRatingDialog && ratingGameId && (
-        <RatingDialog 
+        <RatingDialog
           gameId={ratingGameId}
           onClose={() => {
             setShowRatingDialog(false);
@@ -691,14 +690,14 @@ const Dashboard = () => {
 // Simple Rating Dialog Component
 const RatingDialog = ({ gameId, onClose }: { gameId: string; onClose: () => void }) => {
   const [gameData, setGameData] = useState<any>(null);
-  const [playerRatings, setPlayerRatings] = useState<{[key: string]: number}>({});
+  const [playerRatings, setPlayerRatings] = useState<{ [key: string]: number }>({});
   const [currentUserName, setCurrentUserName] = useState<string>('');
-  
+
   useEffect(() => {
     fetchGameData();
     fetchCurrentUserName();
   }, []);
-  
+
   const fetchGameData = async () => {
     try {
       const res = await fetch(`https://bhaalu-squad-hub.onrender.com/games/${gameId}`);
@@ -710,7 +709,7 @@ const RatingDialog = ({ gameId, onClose }: { gameId: string; onClose: () => void
       console.error('Failed to fetch game data:', err);
     }
   };
-  
+
   const fetchCurrentUserName = async () => {
     const token = localStorage.getItem('authToken');
     if (token) {
@@ -727,11 +726,11 @@ const RatingDialog = ({ gameId, onClose }: { gameId: string; onClose: () => void
       }
     }
   };
-  
+
   const handleRatePlayer = (playerName: string, rating: number) => {
     setPlayerRatings(prev => ({ ...prev, [playerName]: rating }));
   };
-  
+
   const submitRatings = async () => {
     try {
       const userEmail = localStorage.getItem('userEmail');
@@ -740,7 +739,7 @@ const RatingDialog = ({ gameId, onClose }: { gameId: string; onClose: () => void
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ ratings: playerRatings, raterEmail: userEmail })
       });
-      
+
       if (res.ok) {
         onClose();
       }
@@ -748,9 +747,9 @@ const RatingDialog = ({ gameId, onClose }: { gameId: string; onClose: () => void
       console.error('Failed to submit ratings:', err);
     }
   };
-  
+
   if (!gameData) return null;
-  
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
       <div className="bg-card p-6 rounded-lg max-w-2xl w-full max-h-[80vh] overflow-y-auto">
@@ -758,7 +757,7 @@ const RatingDialog = ({ gameId, onClose }: { gameId: string; onClose: () => void
           <Star className="w-5 h-5" />
           <span>Rate Players Performance</span>
         </h2>
-        
+
         <div className="space-y-4">
           {/* Team A Players */}
           {gameData.teams?.teamA?.players?.filter((player: string) => player !== currentUserName).map((player: string) => (
@@ -769,11 +768,10 @@ const RatingDialog = ({ gameId, onClose }: { gameId: string; onClose: () => void
                   <button
                     key={star}
                     onClick={() => handleRatePlayer(player, star)}
-                    className={`w-6 h-6 ${
-                      star <= (playerRatings[player] || 0)
+                    className={`w-6 h-6 ${star <= (playerRatings[player] || 0)
                         ? 'text-yellow-400 fill-yellow-400'
                         : 'text-gray-300'
-                    }`}
+                      }`}
                   >
                     <Star className="w-full h-full" />
                   </button>
@@ -781,7 +779,7 @@ const RatingDialog = ({ gameId, onClose }: { gameId: string; onClose: () => void
               </div>
             </div>
           ))}
-          
+
           {/* Team B Players */}
           {gameData.teams?.teamB?.players?.filter((player: string) => player !== currentUserName).map((player: string) => (
             <div key={player} className="flex items-center justify-between p-3 border rounded">
@@ -791,11 +789,10 @@ const RatingDialog = ({ gameId, onClose }: { gameId: string; onClose: () => void
                   <button
                     key={star}
                     onClick={() => handleRatePlayer(player, star)}
-                    className={`w-6 h-6 ${
-                      star <= (playerRatings[player] || 0)
+                    className={`w-6 h-6 ${star <= (playerRatings[player] || 0)
                         ? 'text-yellow-400 fill-yellow-400'
                         : 'text-gray-300'
-                    }`}
+                      }`}
                   >
                     <Star className="w-full h-full" />
                   </button>
@@ -804,7 +801,7 @@ const RatingDialog = ({ gameId, onClose }: { gameId: string; onClose: () => void
             </div>
           ))}
         </div>
-        
+
         <div className="flex space-x-2 mt-6">
           <Button onClick={submitRatings} className="flex-1">
             Submit Ratings
