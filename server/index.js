@@ -262,21 +262,28 @@ app.post('/api/signup', async (req, res) => {
     await user.save();
     
     // Create profile for new user
-    const Profile = require('./models/Profile');
-    const profile = new Profile({
-      email,
-      name,
-      phone: '',
-      position: 'Midfielder',
-      favoritePlayer: '',
-      bio: '',
-      availableThisWeek: true,
-      rating: 0,
-      gamesPlayed: 0,
-      goals: 0,
-      assists: 0
-    });
-    await profile.save();
+    try {
+      const Profile = require('./models/Profile');
+      const existingProfile = await Profile.findOne({ email });
+      if (!existingProfile) {
+        const profile = new Profile({
+          email,
+          name,
+          phone: '',
+          position: 'Midfielder',
+          favoritePlayer: '',
+          bio: '',
+          availableThisWeek: true,
+          rating: 0,
+          gamesPlayed: 0,
+          goals: 0,
+          assists: 0
+        });
+        await profile.save();
+      }
+    } catch (profileErr) {
+      console.error('Profile creation error:', profileErr);
+    }
     
     const token = jwt.sign({ email }, JWT_SECRET, { expiresIn: '1h' });
     res.json({ token });
