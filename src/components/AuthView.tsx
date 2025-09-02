@@ -32,8 +32,8 @@ const AuthView = ({ onBack }: AuthViewProps) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const endpoint = isLogin
-      ? 'http://localhost:5000/api/login'
-      : 'http://localhost:5000/api/signup';
+      ? 'https://bhaalu-squad-hub.onrender.com/api/login'
+      : 'https://bhaalu-squad-hub.onrender.com/api/signup';
     const payload = isLogin
       ? { email: formData.email, password: formData.password }
       : { email: formData.email, password: formData.password };

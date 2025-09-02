@@ -28,7 +28,7 @@ const CaptainView = () => {
     const fetchPlayers = async () => {
       try {
         const token = localStorage.getItem('authToken');
-        const res = await fetch('http://localhost:5000/api/profile', {
+        const res = await fetch('https://bhaalu-squad-hub.onrender.com/api/profile', {
           headers: token ? { Authorization: `Bearer ${token}` } : {}
         });
         const data = await res.json();
