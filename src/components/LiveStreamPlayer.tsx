@@ -32,7 +32,7 @@ const LiveStreamPlayer = ({ gameId, isStreaming = false, onStreamStart, onStream
 
   useEffect(() => {
     // Setup media server socket
-    const socket = io('http://localhost:5005', {
+    const socket = io('http://localhost:5000', {
       transports: ['polling', 'websocket'],
       timeout: 20000,
       forceNew: true
@@ -68,7 +68,7 @@ const LiveStreamPlayer = ({ gameId, isStreaming = false, onStreamStart, onStream
     
     socket.on('video-update', (data) => {
       if (isViewer && videoRef.current) {
-        const videoUrl = `http://localhost:5005${data.videoUrl}?t=${Date.now()}`;
+        const videoUrl = `http://localhost:5000${data.videoUrl}?t=${Date.now()}`;
         
         // Create new video element to avoid twitching
         const newVideo = document.createElement('video');

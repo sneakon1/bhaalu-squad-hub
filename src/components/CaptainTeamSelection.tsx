@@ -60,7 +60,7 @@ const CaptainTeamSelection = ({ gameId, availablePlayers, onTeamsUpdate, onGoLiv
     }
     
     // Setup socket connection for captain communication
-    const newSocket = io('http://localhost:5005');
+    const newSocket = io('http://localhost:5000');
     
     newSocket.on('connect', () => {
       setSocket(newSocket);

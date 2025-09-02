@@ -6,6 +6,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const cors = require('cors');
 const mongoose = require('mongoose');
+const fs = require('fs');
+const path = require('path');
 const gamesRoutes = require('./games.routes');
 const profileRoutes = require('./profile.routes');
 require('dotenv').config();
@@ -24,10 +26,25 @@ const JWT_SECRET = 'your_jwt_secret'; // Change this in production
 app.use(bodyParser.json());
 app.use(cors());
 
+// Create recordings directory
+const recordingsDir = path.join(__dirname, 'recordings');
+if (!fs.existsSync(recordingsDir)) {
+  fs.mkdirSync(recordingsDir);
+}
+
+// Serve video files
+app.use('/recordings', express.static(recordingsDir));
+
+// Media server data structures
+const gameStreams = new Map();
+const captainRooms = new Map();
+const gameRooms = new Map();
+
 // Socket.io connection handling
 io.on('connection', (socket) => {
   console.log('User connected:', socket.id);
   
+  // Global room for match notifications
   socket.on('join-global', (data) => {
     const { userEmail } = data;
     socket.join('global-room');
@@ -37,13 +54,175 @@ io.on('connection', (socket) => {
   socket.on('broadcast-match-end', (data) => {
     const { gameId, excludeUser } = data;
     console.log(`Broadcasting match end for game ${gameId}, excluding ${excludeUser}`);
-    
-    // Broadcast to all users in global room except the one who ended the match
     socket.to('global-room').emit('match-ended', { gameId, excludeUser });
+  });
+
+  // Media streaming events
+  socket.on('join-game', (data) => {
+    const { gameId, role } = data;
+    socket.gameId = gameId;
+    socket.role = role;
+    
+    if (!gameStreams.has(gameId)) {
+      gameStreams.set(gameId, { broadcaster: null, viewers: new Set(), recording: null });
+    }
+    
+    const stream = gameStreams.get(gameId);
+    
+    if (role === 'broadcaster') {
+      stream.broadcaster = socket.id;
+      socket.emit('ready-to-stream');
+      const recordingPath = path.join(recordingsDir, `${gameId}-${Date.now()}.webm`);
+      stream.recordingPath = recordingPath;
+    } else {
+      stream.viewers.add(socket.id);
+      if (stream.broadcaster) {
+        socket.emit('stream-available');
+      }
+    }
+  });
+
+  socket.on('save-video', (data) => {
+    const stream = gameStreams.get(socket.gameId);
+    if (stream && socket.role === 'broadcaster' && data.videoData) {
+      try {
+        const buffer = Buffer.from(data.videoData);
+        fs.writeFileSync(stream.recordingPath, buffer);
+        stream.viewers.forEach(viewerId => {
+          const viewerSocket = io.sockets.sockets.get(viewerId);
+          if (viewerSocket) {
+            viewerSocket.emit('video-update', {
+              videoUrl: `/recordings/${path.basename(stream.recordingPath)}`
+            });
+          }
+        });
+      } catch (err) {
+        console.error('Error saving video:', err);
+      }
+    }
+  });
+
+  socket.on('request-video-updates', (gameId) => {
+    const stream = gameStreams.get(gameId);
+    if (stream && stream.recordingPath && fs.existsSync(stream.recordingPath)) {
+      socket.emit('video-update', {
+        videoUrl: `/recordings/${path.basename(stream.recordingPath)}`
+      });
+    }
+  });
+
+  // Captain team selection events
+  socket.on('join-captain-room', (data) => {
+    const { gameId, userEmail } = data;
+    socket.gameId = gameId;
+    socket.userEmail = userEmail;
+    
+    if (!captainRooms.has(gameId)) {
+      captainRooms.set(gameId, { captain1: null, captain2: null, messages: [], currentTurn: 'captain1' });
+    }
+    
+    const room = captainRooms.get(gameId);
+    
+    if (!room.captain1) {
+      room.captain1 = socket.id;
+      socket.emit('captain-assigned', { role: 'captain1' });
+    } else if (!room.captain2) {
+      room.captain2 = socket.id;
+      socket.emit('captain-assigned', { role: 'captain2' });
+      
+      [room.captain1, room.captain2].forEach(captainId => {
+        const captainSocket = io.sockets.sockets.get(captainId);
+        if (captainSocket) {
+          captainSocket.emit('both-captains-ready');
+        }
+      });
+    }
+  });
+
+  socket.on('request-captain', (data) => {
+    const { gameId, userEmail } = data;
+    const room = captainRooms.get(gameId);
+    
+    if (room) {
+      if (!room.captain1) {
+        room.captain1 = socket.id;
+        socket.emit('captain-assigned', { role: 'captain1' });
+      } else if (!room.captain2) {
+        room.captain2 = socket.id;
+        socket.emit('captain-assigned', { role: 'captain2' });
+        
+        [room.captain1, room.captain2].forEach(captainId => {
+          const captainSocket = io.sockets.sockets.get(captainId);
+          if (captainSocket) {
+            captainSocket.emit('both-captains-ready');
+          }
+        });
+      }
+    }
+  });
+
+  socket.on('coin-toss', (data) => {
+    const { gameId } = data;
+    const room = captainRooms.get(gameId);
+    
+    if (room) {
+      const winner = Math.random() < 0.5 ? 'captain1' : 'captain2';
+      room.currentTurn = winner;
+      
+      [room.captain1, room.captain2].forEach(captainId => {
+        const captainSocket = io.sockets.sockets.get(captainId);
+        if (captainSocket) {
+          captainSocket.emit('toss-result', { winner });
+        }
+      });
+    }
+  });
+
+  socket.on('select-player', (data) => {
+    const { gameId, playerId, team, captain } = data;
+    const room = captainRooms.get(gameId);
+    
+    if (room && room.currentTurn === captain) {
+      const nextTurn = captain === 'captain1' ? 'captain2' : 'captain1';
+      room.currentTurn = nextTurn;
+      
+      [room.captain1, room.captain2].forEach(captainId => {
+        const captainSocket = io.sockets.sockets.get(captainId);
+        if (captainSocket) {
+          captainSocket.emit('player-selected', { playerId, team, nextTurn });
+        }
+      });
+    }
   });
   
   socket.on('disconnect', () => {
     console.log('User disconnected:', socket.id);
+    
+    // Cleanup captain rooms
+    captainRooms.forEach((room, gameId) => {
+      if (room.captain1 === socket.id) room.captain1 = null;
+      if (room.captain2 === socket.id) room.captain2 = null;
+      if (!room.captain1 && !room.captain2) captainRooms.delete(gameId);
+    });
+    
+    // Cleanup game streams
+    if (socket.gameId) {
+      const stream = gameStreams.get(socket.gameId);
+      if (stream) {
+        if (stream.broadcaster === socket.id) {
+          stream.broadcaster = null;
+          stream.viewers.forEach(viewerId => {
+            const viewerSocket = io.sockets.sockets.get(viewerId);
+            if (viewerSocket) viewerSocket.emit('stream-ended');
+          });
+        } else {
+          stream.viewers.delete(socket.id);
+        }
+        if (!stream.broadcaster && stream.viewers.size === 0) {
+          gameStreams.delete(socket.gameId);
+        }
+      }
+    }
   });
 });
 
