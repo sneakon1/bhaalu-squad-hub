@@ -256,7 +256,7 @@ app.post('/api/signup', async (req, res) => {
     const token = jwt.sign({ email }, JWT_SECRET, { expiresIn: '1h' });
     res.json({ token });
   } catch (err) {
-    res.status(500).json({ message: 'Server error.',error: error.message });
+    res.status(500).json({ message: 'Server error.',error: err.message });
   }
 });
 
