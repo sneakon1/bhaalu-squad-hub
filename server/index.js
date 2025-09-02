@@ -10,6 +10,7 @@ const fs = require('fs');
 const path = require('path');
 const gamesRoutes = require('./games.routes');
 const profileRoutes = require('./profile.routes');
+const { error } = require('console');
 require('dotenv').config();
 
 const app = express();
@@ -255,7 +256,7 @@ app.post('/api/signup', async (req, res) => {
     const token = jwt.sign({ email }, JWT_SECRET, { expiresIn: '1h' });
     res.json({ token });
   } catch (err) {
-    res.status(500).json({ message: 'Server error.' });
+    res.status(500).json({ message: 'Server error.',error: error.message });
   }
 });
 
